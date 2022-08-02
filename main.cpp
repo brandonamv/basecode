@@ -13,7 +13,7 @@
 // #endif
 
 //funcion para guardar el contenido del archivo en un vector de text
-vector<string> split(string s, string del = " ") {
+vector<string> split(string s, string del) {
     int i = 0;
     int start = 0;
     int end = s.find(del);
@@ -28,54 +28,52 @@ vector<string> split(string s, string del = " ") {
 }
 
 void loadObj(){
-    lTheOpenFileName = tinyfd_openFileDialog(
-        "let us read the object file",
-        "",
-        2,
-        lFilterPatterns,
-        NULL,
-        0);
 
-    if (!lTheOpenFileName) {
-        tinyfd_messageBox(
-            "Error",
-            "Open file name is NULL",
-            "ok",
-            "error",
-            1);
-    }
-    else {
-        string myText;
-        cout << lTheOpenFileName;
-        ifstream MyReadFile(lTheOpenFileName);
-        vector<string> temp;
-        vector<string> aux;
-        text.clear();
-        while (getline(MyReadFile, myText)) {
-            // Output the text from the file
-            temp=split(myText, " ");
-            if (temp[0].compare("v")==0) {
-                glm::vec3 vertex;
-                vertex.x = stof(temp[1]);
-                vertex.y = stof(temp[2]);
-                vertex.z = stof(temp[3]);
-                temp_vertices.push_back(vertex);
-            }else if (temp[0].compare("vn") == 0){
-                glm::vec3 normal;
-                normal.x = stof(temp[1]);
-                normal.y = stof(temp[2]);
-                normal.z = stof(temp[3]);
-                temp_normals.push_back(normal);
-            }else if (temp[0].compare("f") == 0) {
-                aux = split(temp[1], "/");
-                
-            }
+    string myText;
+    ifstream MyReadFile("C:/Users/Marielsy/source/repos/basecode/obj/DeadTree.obj");
+    vector<string> temp;
+    vector<string> aux;
+    text.clear();
+    while (getline(MyReadFile, myText)) {
+        // Output the text from the file
+        temp=split(myText, " ");
+        if (temp[0].compare("v")==0) {
+            glm::vec3 vertex;
+            vertex.x = stof(temp[1]);
+            vertex.y = stof(temp[2]);
+            vertex.z = stof(temp[3]);
+            temp_vertices.push_back(vertex);
+        }else if (temp[0].compare("vn") == 0){
+            glm::vec3 normal;
+            normal.x = stof(temp[1]);
+            normal.y = stof(temp[2]);
+            normal.z = stof(temp[3]);
+            temp_normals.push_back(normal);
+        }
+        else if (temp[0].compare("vt") == 0) {
+            glm::vec2 uv;
+            uv.x = stof(temp[1]);
+            uv.y = stof(temp[2]);
+            temp_uvs.push_back(uv);
+        }else if (temp[0].compare("f") == 0) {
+            aux = split(temp[1], "/");
+            vertexIndices.push_back(stoi(aux[0]));
+            aux = split(temp[2], "/");
+            vertexIndices.push_back(stoi(aux[0]));
+            aux = split(temp[3], "/");
+            vertexIndices.push_back(stoi(aux[0]));
         }
     }
 }
 
 // The MAIN function, from here we start the application and run the game loop
 int main(){
+    loadObj();
+    for (unsigned int i = 0; i < vertexIndices.size(); i++) {
+        unsigned int vertexIndex = vertexIndices[i];
+        glm::vec3 vertex = temp_vertices[vertexIndex - 1];
+        out_vertices.push_back(vertex);
+    }
     // Init GLFW
     glfwInit();
     // Set all the required options for GLFW, (GLSL version required = 3.0)
@@ -86,7 +84,7 @@ int main(){
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
     // Create a GLFWwindow object that we can use for GLFW's functions
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "proyecto 1 CG1 - UCV", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Proyecto 2 CG1 - UCV", nullptr, nullptr);
     glfwMakeContextCurrent(window);
 
     // Set the required callback functions
@@ -161,8 +159,8 @@ int main(){
          0.5,0.5,-0.5, 0.0f,  1.0f,  0.0f,1,1,1,
     };
 
-    My3DObject cube(cube_vertices, sizeof(cube_vertices));
-
+    //My3DObject cube(cube_vertices, sizeof(cube_vertices));
+    glBufferData(GL_ARRAY_BUFFER, out_vertices.size() * sizeof(glm::vec3), &out_vertices[0], GL_STATIC_DRAW);
 
 
     // Game loop
@@ -218,9 +216,7 @@ int main(){
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
-        cube.draw();
-
-        glBindVertexArray(0);
+        //cube.draw();
 
         // Swap the screen buffers
         glfwSwapBuffers(window);
@@ -266,7 +262,6 @@ void do_movement(GLfloat delta)
     }
 }
 
-bool firstMouse = true;
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
     if (firstMouse)

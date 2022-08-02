@@ -20,8 +20,7 @@
 
 // Other includes
 #include "Shader.h"
-#include "tinyfiledialogs/tinyfiledialogs.h"
-
+#include <tinyfiledialogs/tinyfiledialogs.h>
 using namespace std;
 
 // Function prototypes
@@ -56,6 +55,9 @@ std::vector< unsigned int > vertexIndices, uvIndices, normalIndices;
 std::vector< glm::vec3 > temp_vertices;
 std::vector< glm::vec2 > temp_uvs;
 std::vector< glm::vec3 > temp_normals;
+std::vector< glm::vec3 > out_vertices;
+std::vector < glm::vec2 > out_uvs;
+std::vector < glm::vec3 > out_normals;
 
 class My3DObject{
 public:
@@ -97,7 +99,8 @@ private:
     }
 
 };
-vector<string> split(string s, string del = " ");
+
+vector<string> split(string s, string del);
 
 void loadObj();
 
