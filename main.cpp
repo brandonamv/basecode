@@ -12,6 +12,8 @@
 // #  endif
 // #endif
 
+vector<GLfloat> objVertex;
+
 //funcion para guardar el contenido del archivo en un vector de text
 vector<string> split(string s, string del) {
     int i = 0;
@@ -30,7 +32,7 @@ vector<string> split(string s, string del) {
 void loadObj(){
 
     string myText;
-    ifstream MyReadFile("C:/Users/Marielsy/source/repos/basecode/obj/DeadTree.obj");
+    ifstream MyReadFile("C:/Users/Marielsy/source/repos/basecode/obj/Sting-Sword-lowpoly.obj");
     vector<string> temp;
     vector<string> aux;
     text.clear();
@@ -57,11 +59,65 @@ void loadObj(){
             temp_uvs.push_back(uv);
         }else if (temp[0].compare("f") == 0) {
             aux = split(temp[1], "/");
-            vertexIndices.push_back(stoi(aux[0]));
+            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].x);
+            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].y);
+            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].z);
+            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].x);
+            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].y);
+            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].z);
+            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].x));
+            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].y));
+            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].z));
             aux = split(temp[2], "/");
-            vertexIndices.push_back(stoi(aux[0]));
+            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].x);
+            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].y);
+            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].z);
+            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].x);
+            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].y);
+            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].z);
+            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].x));
+            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].y));
+            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].z));
             aux = split(temp[3], "/");
-            vertexIndices.push_back(stoi(aux[0]));
+            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].x);
+            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].y);
+            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].z);
+            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].x);
+            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].y);
+            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].z);
+            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].x));
+            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].y));
+            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].z));
+            aux = split(temp[1], "/");
+            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].x);
+            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].y);
+            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].z);
+            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].x);
+            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].y);
+            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].z);
+            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].x));
+            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].y));
+            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].z));
+            aux = split(temp[3], "/");
+            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].x);
+            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].y);
+            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].z);
+            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].x);
+            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].y);
+            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].z);
+            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].x));
+            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].y));
+            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].z));
+            aux = split(temp[4], "/");
+            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].x);
+            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].y);
+            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].z);
+            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].x);
+            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].y);
+            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].z);
+            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].x));
+            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].y));
+            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].z));
         }
     }
 }
@@ -107,9 +163,9 @@ int main(){
     GLfloat cube_vertices[] =
     {
         // back
-        0.5,0.5,-0.5, 0.0f,  0.0f, -1.0f, 1,0,0,
-        0.5,-0.5,-0.5, 0.0f,  0.0f, -1.0f,1,0,0,
-       -0.5,0.5,-0.5,  0.0f,  0.0f, -1.0f,1,0,0,
+        0.5,0.5,-0.5, 0.0f,  0.0f, -1.0f, 1,0,0, //v1
+        0.5,-0.5,-0.5, 0.0f,  0.0f, -1.0f,1,0,0, //v2
+       -0.5,0.5,-0.5,  0.0f,  0.0f, -1.0f,1,0,0, //v3
        -0.5,0.5,-0.5,0.0f,  0.0f, -1.0f,1,0,0,
         0.5,-0.5,-0.5, 0.0f,  0.0f, -1.0f,1,0,0,
        -0.5,-0.5,-0.5, 0.0f,  0.0f, -1.0f,1,0,0,
@@ -158,9 +214,9 @@ int main(){
          0.5,0.5,0.5, 0.0f,  1.0f,  0.0f,1,1,1,
          0.5,0.5,-0.5, 0.0f,  1.0f,  0.0f,1,1,1,
     };
-
-    //My3DObject cube(cube_vertices, sizeof(cube_vertices));
-    glBufferData(GL_ARRAY_BUFFER, out_vertices.size() * sizeof(glm::vec3), &out_vertices[0], GL_STATIC_DRAW);
+    GLfloat* thearray=objVertex.data();
+    My3DObject cube(thearray, objVertex.size());
+    //glBufferData(GL_ARRAY_BUFFER, out_vertices.size() * sizeof(glm::vec3), &out_vertices[0], GL_STATIC_DRAW);
 
 
     // Game loop
@@ -216,7 +272,7 @@ int main(){
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
-        //cube.draw();
+        cube.draw();
 
         // Swap the screen buffers
         glfwSwapBuffers(window);
