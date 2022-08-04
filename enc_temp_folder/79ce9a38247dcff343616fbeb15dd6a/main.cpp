@@ -89,36 +89,7 @@ void loadObj(){
             objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].x));
             objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].y));
             objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].z));
-            aux = split(temp[1], "/");
-            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].x);
-            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].y);
-            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].z);
-            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].x);
-            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].y);
-            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].z);
-            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].x));
-            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].y));
-            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].z));
-            aux = split(temp[2], "/");
-            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].x);
-            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].y);
-            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].z);
-            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].x);
-            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].y);
-            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].z);
-            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].x));
-            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].y));
-            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].z));
-            aux = split(temp[4], "/");
-            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].x);
-            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].y);
-            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].z);
-            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].x);
-            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].y);
-            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].z);
-            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].x));
-            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].y));
-            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].z));
+           
             aux = split(temp[2], "/");
             objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].x);
             objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].y);
@@ -202,15 +173,15 @@ int main(){
        -0.5,-0.5,-0.5, 0.0f,  0.0f, -1.0f,1,0,0, //v4
 
        // front 
-      -0.5,0.5,0.5,  0.0f,  0.0f,  1.0f,0,1,0,  //v5
-      -0.5,-0.5,0.5,  0.0f,  0.0f,  1.0f,0,1,0, //v6
-       0.5,-0.5,0.5,  0.0f,  0.0f,  1.0f,0,1,0, //v7
-      -0.5,0.5,0.5,  0.0f,  0.0f,  1.0f,0,1,0,  //v5
-       0.5,-0.5,0.5, 0.0f,  0.0f,  1.0f,0,1,0,  //v7
-       0.5,0.5,0.5,  0.0f,  0.0f,  1.0f,0,1,0,  //v8
+      -0.5,0.5,0.5,  0.0f,  0.0f,  1.0f,0,1,0,
+      -0.5,-0.5,0.5,  0.0f,  0.0f,  1.0f,0,1,0,
+       0.5,-0.5,0.5,  0.0f,  0.0f,  1.0f,0,1,0,
+      -0.5,0.5,0.5,  0.0f,  0.0f,  1.0f,0,1,0,
+       0.5,-0.5,0.5, 0.0f,  0.0f,  1.0f,0,1,0,
+       0.5,0.5,0.5,  0.0f,  0.0f,  1.0f,0,1,0,
 
        // left
-       -0.5,0.5,-0.5, -1.0f,  0.0f,  0.0f,0,0,1, //
+       -0.5,0.5,-0.5, -1.0f,  0.0f,  0.0f,0,0,1,
        -0.5,-0.5,-0.5, -1.0f,  0.0f,  0.0f,0,0,1,
        -0.5,-0.5,0.5, -1.0f,  0.0f,  0.0f,0,0,1,
        -0.5,0.5,-0.5, -1.0f,  0.0f,  0.0f,0,0,1,
