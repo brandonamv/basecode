@@ -32,7 +32,7 @@ vector<string> split(string s, string del) {
 void loadObj(){
 
     string myText;
-    ifstream MyReadFile("C:/Users/Marielsy/source/repos/basecode/obj/Sting-Sword-lowpoly.obj");
+    ifstream MyReadFile("C:/Users/Marielsy/source/repos/basecode/obj/DeadTree.obj");
     vector<string> temp;
     vector<string> aux;
     text.clear();
@@ -90,36 +90,6 @@ void loadObj(){
             objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].y));
             objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].z));
             aux = split(temp[1], "/");
-            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].x);
-            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].y);
-            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].z);
-            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].x);
-            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].y);
-            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].z);
-            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].x));
-            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].y));
-            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].z));
-            aux = split(temp[2], "/");
-            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].x);
-            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].y);
-            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].z);
-            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].x);
-            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].y);
-            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].z);
-            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].x));
-            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].y));
-            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].z));
-            aux = split(temp[4], "/");
-            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].x);
-            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].y);
-            objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].z);
-            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].x);
-            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].y);
-            objVertex.push_back(temp_normals[stoi(aux[2]) - 1].z);
-            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].x));
-            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].y));
-            objVertex.push_back(abs(temp_normals[stoi(aux[2]) - 1].z));
-            aux = split(temp[2], "/");
             objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].x);
             objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].y);
             objVertex.push_back(temp_vertices[stoi(aux[0]) - 1].z);
@@ -194,10 +164,10 @@ int main(){
     GLfloat cube_vertices[] =
     {
         // back
-        0.5,0.5,-0.5, 0.0f,  0.0f, -1.0f, 1,0,0, //v1
+        -0.5,0.5,-0.5,  0.0f,  0.0f, -1.0f,1,0,0, //v3
+       0.5,0.5,-0.5, 0.0f,  0.0f, -1.0f, 1,0,0, //v1
         0.5,-0.5,-0.5, 0.0f,  0.0f, -1.0f,1,0,0, //v2
-       -0.5,0.5,-0.5,  0.0f,  0.0f, -1.0f,1,0,0, //v3
-       -0.5,0.5,-0.5,0.0f,  0.0f, -1.0f,1,0,0,   //v3
+       -0.5,0.5,-0.5, 0.0f,  0.0f, -1.0f,1,0,0,   //v3
         0.5,-0.5,-0.5, 0.0f,  0.0f, -1.0f,1,0,0, //v2
        -0.5,-0.5,-0.5, 0.0f,  0.0f, -1.0f,1,0,0, //v4
 
@@ -210,45 +180,44 @@ int main(){
        0.5,0.5,0.5,  0.0f,  0.0f,  1.0f,0,1,0,  //v8
 
        // left
-       -0.5,0.5,-0.5, -1.0f,  0.0f,  0.0f,0,0,1, //
-       -0.5,-0.5,-0.5, -1.0f,  0.0f,  0.0f,0,0,1,
-       -0.5,-0.5,0.5, -1.0f,  0.0f,  0.0f,0,0,1,
-       -0.5,0.5,-0.5, -1.0f,  0.0f,  0.0f,0,0,1,
-       -0.5,-0.5,0.5, -1.0f,  0.0f,  0.0f,0,0,1,
-       -0.5,0.5,0.5, -1.0f,  0.0f,  0.0f,0,0,1,
+       -0.5,0.5,-0.5, -1.0f,  0.0f,  0.0f,0,0,1, //v3
+       -0.5,-0.5,-0.5, -1.0f,  0.0f,  0.0f,0,0,1,//v4
+       -0.5,-0.5,0.5, -1.0f,  0.0f,  0.0f,0,0,1, //v6
+       -0.5,0.5,-0.5, -1.0f,  0.0f,  0.0f,0,0,1, //v3
+       -0.5,-0.5,0.5, -1.0f,  0.0f,  0.0f,0,0,1, //v6
+       -0.5,0.5,0.5, -1.0f,  0.0f,  0.0f,0,0,1,  //v5
 
 
 
        // right
-        0.5,0.5,0.5, 1.0f,  0.0f,  0.0f, 1,0,1,
-        0.5,-0.5,0.5, 1.0f,  0.0f,  0.0f,1,0,1,
-        0.5,-0.5,-0.5, 1.0f,  0.0f,  0.0f,1,0,1,
-        0.5,0.5,0.5, 1.0f,  0.0f,  0.0f,1,0,1,
-        0.5,-0.5,-0.5, 1.0f,  0.0f,  0.0f,1,0,1,
-        0.5,0.5,-0.5, 1.0f,  0.0f,  0.0f,1,0,1,
+        0.5,0.5,0.5, 1.0f,  0.0f,  0.0f, 1,0,1,  //v8
+        0.5,-0.5,0.5, 1.0f,  0.0f,  0.0f,1,0,1,  //v7
+        0.5,-0.5,-0.5, 1.0f,  0.0f,  0.0f,1,0,1, //v2
+        0.5,0.5,0.5, 1.0f,  0.0f,  0.0f,1,0,1,   //v8
+        0.5,-0.5,-0.5, 1.0f,  0.0f,  0.0f,1,0,1, //v2
+        0.5,0.5,-0.5, 1.0f,  0.0f,  0.0f,1,0,1,  //v1
 
 
         // bottom
-       -0.5,-0.5,0.5, 0.0f, -1.0f,  0.0f,1,1,0,
-       -0.5,-0.5,-0.5, 0.0f, -1.0f,  0.0f,1,1,0,
-        0.5,-0.5,-0.5,0.0f, -1.0f,  0.0f,1,1,0,
-       -0.5,-0.5,0.5, 0.0f, -1.0f,  0.0f,1,1,0,
-        0.5,-0.5,-0.5, 0.0f, -1.0f,  0.0f,1,1,0,
-        0.5,-0.5,0.5, 0.0f, -1.0f,  0.0f,1,1,0,
+       -0.5,-0.5,0.5, 0.0f, -1.0f,  0.0f,1,1,0,  //v6
+       -0.5,-0.5,-0.5, 0.0f, -1.0f,  0.0f,1,1,0, //v4
+        0.5,-0.5,-0.5,0.0f, -1.0f,  0.0f,1,1,0,  //v2
+       -0.5,-0.5,0.5, 0.0f, -1.0f,  0.0f,1,1,0,  //v6
+        0.5,-0.5,-0.5, 0.0f, -1.0f,  0.0f,1,1,0, //v2
+        0.5,-0.5,0.5, 0.0f, -1.0f,  0.0f,1,1,0,  //v7
 
 
         // top
-        -0.5,0.5,-0.5, 0.0f,  1.0f,  0.0f, 1,1,1,
-        -0.5,0.5,0.5, 0.0f,  1.0f,  0.0f, 1,1,1,
-         0.5,0.5,0.5, 0.0f,  1.0f,  0.0f, 1,1,1,
-        -0.5,0.5,-0.5,  0.0f,  1.0f,  0.0f, 1,1,1,
-         0.5,0.5,0.5, 0.0f,  1.0f,  0.0f,1,1,1,
-         0.5,0.5,-0.5, 0.0f,  1.0f,  0.0f,1,1,1,
+        -0.5,0.5,-0.5, 0.0f,  1.0f,  0.0f, 1,1,1, //v3
+        -0.5,0.5,0.5, 0.0f,  1.0f,  0.0f, 1,1,1,  //v5
+         0.5,0.5,0.5, 0.0f,  1.0f,  0.0f, 1,1,1,  //v8
+        -0.5,0.5,-0.5,  0.0f,  1.0f,  0.0f, 1,1,1,//v3
+         0.5,0.5,0.5, 0.0f,  1.0f,  0.0f,1,1,1,   //v8
+         0.5,0.5,-0.5, 0.0f,  1.0f,  0.0f,1,1,1,  //v1
     };
     GLfloat* thearray=objVertex.data();
-    My3DObject cube(thearray, objVertex.size());
-    //glBufferData(GL_ARRAY_BUFFER, out_vertices.size() * sizeof(glm::vec3), &out_vertices[0], GL_STATIC_DRAW);
-
+    //My3DObject cube(cube_vertices, sizeof(cube_vertices));
+    My3DObject cube(thearray, sizeof(thearray)*objVertex.size());
 
     // Game loop
     // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -279,7 +248,7 @@ int main(){
         do_movement(deltaTime);
 
         // Clear the colorbuffer
-        glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
+        glClearColor(0.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
