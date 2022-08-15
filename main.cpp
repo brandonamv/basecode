@@ -11,8 +11,8 @@
 // #    define GLEWAPI extern __declspec(dllimport)
 // #  endif
 // #endif
+//clase obj con opcion cargar, antialiasing blending, multisampling
 
-vector<GLfloat> objVertex;
 
 //funcion para guardar el contenido del archivo en un vector de text
 vector<string> split(string s, string del) {
@@ -199,12 +199,12 @@ int main(){
 
 
         // bottom
-       -0.5,-0.5,0.5, 0.0f, -1.0f,  0.0f,1,1,0,  //v6
-       -0.5,-0.5,-0.5, 0.0f, -1.0f,  0.0f,1,1,0, //v4
-        0.5,-0.5,-0.5,0.0f, -1.0f,  0.0f,1,1,0,  //v2
-       -0.5,-0.5,0.5, 0.0f, -1.0f,  0.0f,1,1,0,  //v6
-        0.5,-0.5,-0.5, 0.0f, -1.0f,  0.0f,1,1,0, //v2
-        0.5,-0.5,0.5, 0.0f, -1.0f,  0.0f,1,1,0,  //v7
+       -0.5,-0.5,0.5, 0.0f, -1.0f,  0.0f,1,1,0,
+       -0.5,-0.5,-0.5, 0.0f, -1.0f,  0.0f,1,1,0,
+        0.5,-0.5,-0.5,0.0f, -1.0f,  0.0f,1,1,0,
+       -0.5,-0.5,0.5, 0.0f, -1.0f,  0.0f,1,1,0,
+        0.5,-0.5,-0.5, 0.0f, -1.0f,  0.0f,1,1,0,
+        0.5,-0.5,0.5, 0.0f, -1.0f,  0.0f,1,1,0,
 
 
         // top
