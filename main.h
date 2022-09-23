@@ -20,6 +20,7 @@
 
 // Other includes
 #include "Shader.h"
+
 #include <tinyfiledialogs/tinyfiledialogs.h>
 using namespace std;
 
@@ -51,13 +52,13 @@ FILE* lIn;
 vector<string> text;
 
 //funciones para cargas de objetos
-std::vector< unsigned int > vertexIndices, uvIndices, normalIndices;
-std::vector< glm::vec3 > temp_vertices;
-std::vector< glm::vec2 > temp_uvs;
-std::vector< glm::vec3 > temp_normals;
-std::vector< glm::vec3 > out_vertices;
-std::vector < glm::vec2 > out_uvs;
-std::vector < glm::vec3 > out_normals;
+vector< unsigned int > vertexIndices, uvIndices, normalIndices;
+vector< glm::vec3 > temp_vertices;
+vector< glm::vec2 > temp_uvs;
+vector< glm::vec3 > temp_normals;
+vector< glm::vec3 > out_vertices;
+vector < glm::vec2 > out_uvs;
+vector < glm::vec3 > out_normals;
 vector<GLfloat> objVertex;
 
 int nFaces=0;
@@ -107,6 +108,8 @@ private:
 vector<string> split(string s, string del);
 
 void loadObj();
+
+string openFile();
 
 bool firstMouse = true;
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);

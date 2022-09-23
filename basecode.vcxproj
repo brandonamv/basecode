@@ -144,6 +144,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="obj.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="Shader.h" />
   </ItemGroup>

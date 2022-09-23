@@ -29,10 +29,37 @@ vector<string> split(string s, string del) {
     return temp;
 }
 
+string openFile() {
+    char const* lTheOpenFileName;
+    char const* lFilterPatterns[2] = { "*.obj", "*.mtl" };
+
+    lTheOpenFileName = tinyfd_openFileDialog(
+        "Seleccione objeto a cargar",
+        "",
+        2,
+        lFilterPatterns,
+        NULL,
+        0);
+
+    if (!lTheOpenFileName)
+    {
+        tinyfd_messageBox(
+            "Error",
+            "Open file name is NULL",
+            "ok",
+            "error",
+            1);
+        return "";
+    }
+    return lTheOpenFileName;
+}
+
 void loadObj(){
 
     string myText;
-    ifstream MyReadFile("C:/Users/Marielsy/source/repos/basecode/obj/DeadTree.obj");
+    string archivo;
+    archivo=openFile();
+    ifstream MyReadFile(archivo);
     vector<string> temp;
     vector<string> aux;
     text.clear();
