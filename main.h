@@ -24,6 +24,8 @@
 #include <tinyfiledialogs/tinyfiledialogs.h>
 using namespace std;
 
+#include <subObj.h>
+
 // Function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -52,57 +54,15 @@ FILE* lIn;
 vector<string> text;
 
 //funciones para cargas de objetos
-vector< unsigned int > vertexIndices, uvIndices, normalIndices;
+vector< unsigned int > vertexIndices, normalIndices;
 vector< glm::vec3 > temp_vertices;
-vector< glm::vec2 > temp_uvs;
 vector< glm::vec3 > temp_normals;
 vector< glm::vec3 > out_vertices;
-vector < glm::vec2 > out_uvs;
 vector < glm::vec3 > out_normals;
 vector<GLfloat> objVertex;
 
 int nFaces=0;
 
-class My3DObject{
-public:
-    int size;
-
-    // data =  x,y,z,nx,ny,nz,x,y,z,nx,ny,nz, .... 
-    My3DObject(GLfloat* data, int size){
-        this->size = size;
-        // First, set the container's VAO (and VBO)
-        glGenVertexArrays(1, &containerVAO);
-        glBindVertexArray(containerVAO);
-
-        glGenBuffers(1, &VBO);
-        // We only need to bind to the VBO (to link it with glVertexAttribPointer), no need to fill it; the VBO's data already contains all we need.
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
-
-        // Position attribute
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(GLfloat), (GLvoid*)0);
-        glEnableVertexAttribArray(0);
-        // Normal attribute
-        glVertexAttribPointer(1,3, GL_FLOAT, GL_FALSE, 9 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-        glEnableVertexAttribArray(1);
-        // Color attribute
-        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
-        glEnableVertexAttribArray(2);
-    }
-
-    void draw(){
-        bind();
-        glDrawArrays(GL_TRIANGLES, 0, size);
-    }
-
-private:
-    GLuint VBO, containerVAO;
-
-    void bind(){
-        glBindVertexArray(containerVAO);
-    }
-
-};
 
 
 vector<string> split(string s, string del);
