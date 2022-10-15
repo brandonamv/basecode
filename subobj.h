@@ -1,5 +1,4 @@
 #pragma once
-#include <obj.h>
 
 class subObj {
 public:
