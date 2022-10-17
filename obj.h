@@ -29,7 +29,7 @@ class obj
         // Variables para los shaders
         float x_angle = 0.0f;
         float y_angle = 0.0f;
-        glm::vec3 tras_vector = { 0.0f,0.0f,-2.0f };
+        glm::vec3 tras_vector = { 0.0f,0.0f,-3.0f };
         glm::vec3 scale_vector = { 1.0f,1.0f,1.0f };
         glm::vec3 object_color={0.7f,0.7f,0.7f };
         
@@ -49,6 +49,10 @@ class obj
         void loadVertex(string const& temp, mat actual);
 
         vector<string> split(string const& original, char separator);
+
+        glm::vec3 getVertex(string temp);
+
+        void setVertexNormal(glm::vec3 vNormal, string temp, mat actual);
 
 };
 
@@ -143,6 +147,7 @@ inline void obj::loadObj(string filename)
     size_t found;
     glm::vec3 vertex;
     glm::vec3 normal;
+    glm::vec3 a, b, c, d,v1,v2,n,nt;
     face tempFace;
     mat tempMaterial;
     while (getline(MyReadFile, myText)) {
@@ -202,7 +207,21 @@ inline void obj::loadObj(string filename)
             }
             else
             {
-                tempFace.vertex.clear();
+                a = getVertex(temp[1]);
+                b = getVertex(temp[2]);
+                c = getVertex(temp[3]);
+                n = glm::cross((a - b), (a - c));
+                setVertexNormal(n, temp[1], tempMaterial);
+                setVertexNormal(n, temp[2], tempMaterial);
+                setVertexNormal(n, temp[3], tempMaterial);
+                if (temp.size() > 4) {
+                    d = getVertex(temp[4]);
+                    setVertexNormal(n, temp[1], tempMaterial);
+                    setVertexNormal(n, temp[3], tempMaterial);
+                    setVertexNormal(n, temp[4], tempMaterial);
+                }
+                
+                /*tempFace.vertex.clear();
                 for (int i = 1; i < temp.size(); i++)
                 {
                     aux = split(temp[i], '/');
@@ -211,7 +230,7 @@ inline void obj::loadObj(string filename)
                     tempFace.vertex.push_back(vertice);
                 }
                 if(materials.empty())tempFace.material = tempMaterial;
-                faces.push_back(tempFace);
+                faces.push_back(tempFace);*/
             }
         }
     }
@@ -260,4 +279,38 @@ inline vector<string> obj::split(string const& original, char separator) {
     }
     results.push_back(string(start, next));
     return results;
+}
+
+inline glm::vec3 obj::getVertex(string temp)
+{
+    aux = split(temp, '/');
+    vertice = stoi(aux[0]);
+    vertice < 0 ? vertice = temp_vertices.size() + vertice : vertice--;
+    return {temp_vertices[vertice]};
+}
+
+inline void obj::setVertexNormal(glm::vec3 vNormal, string temp, mat actual)
+{
+    aux = split(temp, '/');
+    vertice = stoi(aux[0]);
+    vertice < 0 ? vertice = temp_vertices.size() + vertice : vertice--;
+    objVertex.push_back(temp_vertices[vertice].x);
+    objVertex.push_back(temp_vertices[vertice].y);
+    objVertex.push_back(temp_vertices[vertice].z);
+
+    objVertex.push_back(vNormal.x);
+    objVertex.push_back(vNormal.y);
+    objVertex.push_back(vNormal.z);
+
+    if (materials.empty()) {
+        objVertex.push_back(object_color.x);
+        objVertex.push_back(object_color.y);
+        objVertex.push_back(object_color.z);
+    }
+    else
+    {
+        objVertex.push_back(actual.color.x);
+        objVertex.push_back(actual.color.y);
+        objVertex.push_back(actual.color.z);
+    }
 }
