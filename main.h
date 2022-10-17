@@ -8,7 +8,7 @@
 // #include <GL/glad.h>
 
 // GLFW
-#include <GLFW/glfw3.h>
+#include <glfw3.h>
 
 // GLM Mathematics
 #define GLM_FORCE_RADIANS// force everything in radian
@@ -23,6 +23,9 @@
 using namespace std;
 
 #include <obj.h>
+
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 
 // Function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -53,6 +56,7 @@ string openFile();
 vector<obj*> objects;
 
 bool firstMouse = true;
+
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 

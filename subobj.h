@@ -27,6 +27,12 @@ public:
         glEnableVertexAttribArray(2);
     }
 
+    ~subObj() {
+        // Delete all the objects we've created
+        glDeleteVertexArrays(1, &containerVAO);
+        glDeleteBuffers(1, &VBO);
+    }
+
     void draw() {
         bind();
         glDrawArrays(GL_TRIANGLES, 0, size);

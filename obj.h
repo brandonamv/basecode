@@ -6,6 +6,8 @@
 #include <string>
 #include <subobj.h>
 
+GLenum modo = GL_FILL;
+
 class obj
 {
 	public:
@@ -19,17 +21,17 @@ class obj
         };
         struct face
         {
+            mat material;
             vector<int> vertex;
-            vector<int> normals;
         };
 
 	private:
         // Variables para los shaders
         float x_angle = 0.0f;
         float y_angle = 0.0f;
-        glm::vec3 tras_vector = { 0.0f,0.0f,-3.0f };
+        glm::vec3 tras_vector = { 0.0f,0.0f,-2.0f };
         glm::vec3 scale_vector = { 1.0f,1.0f,1.0f };
-        glm::vec3 object_color={1.0f,1.0f,1.0f };
+        glm::vec3 object_color={0.7f,0.7f,0.7f };
         
         // Variables de datos de objetos
         vector <string> aux;
@@ -44,7 +46,7 @@ class obj
 
         void loadObj(string filename);
 
-        void loadVertex(string const& temp);
+        void loadVertex(string const& temp, mat actual);
 
         vector<string> split(string const& original, char separator);
 
@@ -52,6 +54,36 @@ class obj
 
 inline obj::obj(string fileName)
 {
+    string aux = fileName;
+    int n = aux.size() - 1;
+    aux[n] = 'l';
+    aux[n - 1] = 't';
+    aux[n - 2] = 'm';
+    cout << aux;
+    ifstream MyReadFile(aux);
+    if (MyReadFile.is_open())
+    {
+        vector<string> temp;
+        mat tempMaterial;
+        while (getline(MyReadFile, aux)) {
+            if (aux.size() < 1)continue;
+            if (aux[0] != 'n' && aux[0] != 'K')continue;
+            temp = split(aux, ' ');
+            if (strcmp(temp[0].data(), "newmtl") == 0)
+            {
+                tempMaterial.name = temp[1]; 
+                materials.push_back(tempMaterial);
+            }
+            else if(strcmp(temp[0].data(), "Kd") == 0)
+            {
+                materials.back().color = { stof(temp[1]),stof(temp[2]),stof(temp[3])};
+            }
+        }
+    }
+    else {
+        cout << "No se encontro el archivo .mtl";
+    }
+    
     loadObj(fileName);
     float dx,dy,dz,df;
     dx = abs(max.x - min.x);
@@ -77,13 +109,14 @@ inline obj::obj(string fileName)
     scale_vector.z = 1.0f/df;
     GLfloat* thearray = objVertex.data();
     mesh=new subObj(thearray, sizeof(thearray) * objVertex.size());
-    /*objVertex.clear();
-    temp_normals.clear();
-    temp_vertices.clear();*/
 }
 
 inline obj::~obj()
 {
+    mesh->~subObj();
+    objVertex.clear();
+    temp_normals.clear();
+    temp_vertices.clear();
 }
 
 inline void obj::draw(GLint objectColorLoc, GLint modelLoc)
@@ -96,7 +129,7 @@ inline void obj::draw(GLint objectColorLoc, GLint modelLoc)
         glm::rotate(glm::mat4(1.0f), x_angle, glm::vec3(1.0f, 0.0f, 0.0f)) *
         glm::scale(glm::mat4(1.0f), scale_vector);
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonMode(GL_FRONT_AND_BACK,modo);
     mesh->draw();
 }
 
@@ -159,19 +192,32 @@ inline void obj::loadObj(string filename)
         {
             if (!temp_normals.empty())
             {
-                loadVertex(temp[1]);
-                loadVertex(temp[2]);
-                loadVertex(temp[3]);
+                loadVertex(temp[1],tempMaterial);
+                loadVertex(temp[2], tempMaterial);
+                loadVertex(temp[3], tempMaterial);
                 if (temp.size() < 5)continue;
-                loadVertex(temp[1]);
-                loadVertex(temp[3]);
-                loadVertex(temp[4]);
+                loadVertex(temp[1], tempMaterial);
+                loadVertex(temp[3], tempMaterial);
+                loadVertex(temp[4], tempMaterial);
+            }
+            else
+            {
+                tempFace.vertex.clear();
+                for (int i = 1; i < temp.size(); i++)
+                {
+                    aux = split(temp[i], '/');
+                    vertice = stoi(aux[0]);
+                    vertice < 0 ? vertice = temp_vertices.size() + vertice : vertice--;
+                    tempFace.vertex.push_back(vertice);
+                }
+                if(materials.empty())tempFace.material = tempMaterial;
+                faces.push_back(tempFace);
             }
         }
     }
 }
 
-inline void obj::loadVertex(string const& temp)
+inline void obj::loadVertex(string const& temp, mat actual)
 {
     aux = split(temp, '/');
     vertice = stoi(aux[0]);
@@ -191,6 +237,12 @@ inline void obj::loadVertex(string const& temp)
         objVertex.push_back(object_color.x);
         objVertex.push_back(object_color.y);
         objVertex.push_back(object_color.z);
+    }
+    else
+    {
+        objVertex.push_back(actual.color.x);
+        objVertex.push_back(actual.color.y);
+        objVertex.push_back(actual.color.z);
     }
 
     

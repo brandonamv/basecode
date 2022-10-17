@@ -122,9 +122,19 @@ int main(){
     //};
 
     
-    //My3DObject cube(cube_vertices, sizeof(cube_vertices));
+    // Initialize ImGUI
+    /*IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGui::StyleColorsDark();
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 330");*/
     
-    
+    // Variables to be changed in the ImGUI window
+    bool drawTriangle = true;
+    float size = 1.0f;
+    float color[4] = { 0.8f, 0.3f, 0.02f, 1.0f };
+
     // Game loop
     // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -157,6 +167,23 @@ int main(){
         glClearColor(0.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        //// Tell OpenGL a new frame is about to begin
+        //ImGui_ImplOpenGL3_NewFrame();
+        //ImGui_ImplGlfw_NewFrame();
+        //ImGui::NewFrame();
+
+        //// ImGUI window creation
+        //ImGui::Begin("My name is window, ImGUI window");
+        //// Text that appears in the window
+        //ImGui::Text("Hello there adventurer!");
+        //// Checkbox that appears in the window
+        //ImGui::Checkbox("Draw Triangle", &drawTriangle);
+        //// Slider that appears in the window
+        //ImGui::SliderFloat("Size", &size, 0.5f, 2.0f);
+        //// Fancy color editor that appears in the window
+        //ImGui::ColorEdit4("Color", color);
+        //// Ends the window
+        //ImGui::End();
 
         // Create camera transformations
         glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -176,10 +203,19 @@ int main(){
             }
         }
 
+        // Renders the ImGUI elements
+        /*ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());*/
+
         // Swap the screen buffers
         glfwSwapBuffers(window);
     }
-
+    // Deletes all ImGUI instances
+    /*ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();*/
+    // Delete all the objects we've created
+    glDeleteProgram(basic_shader.Program);
     // Terminate GLFW, clearing any resources allocated by GLFW.
     glfwTerminate();
     return 0;
