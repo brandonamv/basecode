@@ -6,14 +6,71 @@
 #include <string>
 #include <subobj.h>
 
-GLenum modo = GL_FILL;
-
+glm::vec3 trasScene={0.0f,0.0f,0.0f};
 class obj
 {
 	public:
 		obj(string fileName);
 		~obj();
         void draw(GLint objectColorLoc, GLint modelLoc);
+        float* getFillColor() {
+            return fill_color;
+        }
+        void setFillColor(float* color) {
+            fill_color[0] = color[0];
+            fill_color[1] = color[1];
+            fill_color[2] = color[2];
+        }
+        float* getLineColor() {
+            return line_color;
+        }
+        void setLineColor(float* color) {
+            line_color[0] = color[0];
+            line_color[1] = color[1];
+            line_color[2] = color[2];
+        }
+        float* getPointColor() {
+            return point_color;
+        }
+        void setPointColor(float* color) {
+            point_color[0] = color[0];
+            point_color[1] = color[1];
+            point_color[2] = color[2];
+        }
+
+        float getTam() {
+            return scale;
+        }
+        void setTam(float scala) {
+            scale = scala;
+        }
+        float getPointSize() {
+            return point_size;
+        }
+        void setPointSize(float size) {
+            point_size = size;
+        }
+
+        bool getFilled() {
+            return filled;
+        }
+        void setFilled(bool value) {
+            filled = value;
+        }
+        bool getLined() {
+            return line;
+        }
+        void setLined(bool value) {
+            line = value;
+        }
+        bool getPointed() {
+            return point;
+        }
+        void setPointed(bool value) {
+            point = value;
+        }
+
+        bool onClick(int x, int y);
         struct mat
         {
             string name;
@@ -23,6 +80,13 @@ class obj
         {
             mat material;
             vector<int> vertex;
+            glm::vec3 normal;
+        };
+
+        struct baseNormal {
+            int vertex;
+            vector<int> adjacent;
+            mat material;
         };
 
 	private:
@@ -31,8 +95,9 @@ class obj
         float y_angle = 0.0f;
         glm::vec3 tras_vector = { 0.0f,0.0f,-3.0f };
         glm::vec3 scale_vector = { 1.0f,1.0f,1.0f };
-        glm::vec3 object_color={0.7f,0.7f,0.7f };
-        
+        float fill_color[4] = {.7f,.7f,.7f,1.0f};
+        float line_color[4] = { 0.0f,1.0f,0.0f,1.0f };
+        float point_color[4] = { 1.0f,0.0f,0.0f,1.0f };
         // Variables de datos de objetos
         vector <string> aux;
         vector <glm::vec3> temp_vertices;
@@ -42,7 +107,11 @@ class obj
         vector <GLfloat> objVertex;
         glm::vec3 max, min;
         int normal, vertice;
+        float scale = 1.0f,point_size=2.0f;
+        bool filled, point, line;
+
         subObj* mesh;
+        GLuint VBO, VAO;
 
         void loadObj(string filename);
 
@@ -63,7 +132,6 @@ inline obj::obj(string fileName)
     aux[n] = 'l';
     aux[n - 1] = 't';
     aux[n - 2] = 'm';
-    cout << aux;
     ifstream MyReadFile(aux);
     if (MyReadFile.is_open())
     {
@@ -108,11 +176,57 @@ inline obj::obj(string fileName)
             df = dz;
         }
     }
-    scale_vector.x = 1.0f/df;
-    scale_vector.y = 1.0f/df;
-    scale_vector.z = 1.0f/df;
+    float bounding[] = {
+        max.x,max.y,max.z,
+        min.x,max.y,max.z,
+        max.x,max.y,max.z,
+        max.x,min.y,max.z,
+        min.x,min.y,max.z,
+        max.x,min.y,max.z,
+        min.x,min.y,max.z,
+        min.x,max.y,max.z,//cuadrado frontal
+        max.x,max.y,min.z,
+        min.x,max.y,min.z,
+        max.x,max.y,min.z,
+        max.x,min.y,min.z,
+        min.x,min.y,min.z,
+        max.x,min.y,min.z,
+        min.x,min.y,min.z,
+        min.x,max.y,min.z,
+    };
+    filled = true;
+    line = true;
+    point=true;
+    
+    glGenVertexArrays(1, &VAO);
+    // 1. bind Vertex Array Object
+    glBindVertexArray(VAO);
+    // 2. copy our vertices array in a buffer for OpenGL to use
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(bounding), bounding, GL_STATIC_DRAW);
+    // 3. then set our vertex attributes pointers
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glGenVertexArrays(1, &VAO);
+    // 1. bind Vertex Array Object
+    glBindVertexArray(VAO);
+    // 2. copy our vertices array in a buffer for OpenGL to use
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat), objVertex.data(), GL_STATIC_DRAW);
+    // 3. then set our vertex attributes pointers
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    scale_vector.x =1.0f/df;
+    scale_vector.y =1.0f/df;
+    scale_vector.z =1.0f/df;
+    max = max / df;
+    min = min / df;
     GLfloat* thearray = objVertex.data();
     mesh=new subObj(thearray, sizeof(thearray) * objVertex.size());
+
 }
 
 inline obj::~obj()
@@ -126,15 +240,41 @@ inline obj::~obj()
 inline void obj::draw(GLint objectColorLoc, GLint modelLoc)
 {
     // Use cooresponding shader when setting uniforms/drawing objects
-    glUniform3f(objectColorLoc, object_color.x,object_color.y,object_color.z);
+    glUniform3f(objectColorLoc, fill_color[0], fill_color[1], fill_color[2]);
     glm::mat4 model =
-        glm::translate(glm::mat4(1.0f), tras_vector) *
+        glm::translate(glm::mat4(1.0f), tras_vector+trasScene) *
         glm::rotate(glm::mat4(1.0f), y_angle, glm::vec3(0.0f, 1.0f, 0.0f)) *
         glm::rotate(glm::mat4(1.0f), x_angle, glm::vec3(1.0f, 0.0f, 0.0f)) *
-        glm::scale(glm::mat4(1.0f), scale_vector);
+        glm::scale(glm::mat4(1.0f), scale_vector*scale);
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-    glPolygonMode(GL_FRONT_AND_BACK,modo);
-    mesh->draw();
+    /*glBindVertexArray(VAO);
+    glDrawArrays(GL_LINES, 0, 48);*/
+    if (filled)
+    {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        mesh->draw();
+    }
+    if (point)
+    {
+        glUniform3f(objectColorLoc, point_color[0], point_color[1], point_color[2]);
+        glPointSize(point_size);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+        mesh->draw();
+    }
+    
+    if (line)
+    {
+        glUniform3f(objectColorLoc, line_color[0], line_color[1], line_color[2]);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        mesh->draw();
+    }
+}
+
+inline bool obj::onClick(int x, int y)
+{
+    
+    cout << x << " " << y<<endl;
+    return false;
 }
 
 
@@ -253,9 +393,9 @@ inline void obj::loadVertex(string const& temp, mat actual)
     objVertex.push_back(temp_normals[normal].z);
 
     if (materials.empty()) {
-        objVertex.push_back(object_color.x);
-        objVertex.push_back(object_color.y);
-        objVertex.push_back(object_color.z);
+        objVertex.push_back(fill_color[0]);
+        objVertex.push_back(fill_color[1]);
+        objVertex.push_back(fill_color[2]);
     }
     else
     {
@@ -303,9 +443,9 @@ inline void obj::setVertexNormal(glm::vec3 vNormal, string temp, mat actual)
     objVertex.push_back(vNormal.z);
 
     if (materials.empty()) {
-        objVertex.push_back(object_color.x);
-        objVertex.push_back(object_color.y);
-        objVertex.push_back(object_color.z);
+        objVertex.push_back(fill_color[0]);
+        objVertex.push_back(fill_color[1]);
+        objVertex.push_back(fill_color[2]);
     }
     else
     {

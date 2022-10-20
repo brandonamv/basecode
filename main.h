@@ -23,14 +23,16 @@
 using namespace std;
 
 #include <obj.h>
-
+#include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
 // Function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void mouseClick(GLFWwindow* window, int button, int action, int mods);
 void do_movement(GLfloat delta);
+string openFile();
 
 // Window dimensions
 const GLuint WIDTH = 800, HEIGHT = 600;
@@ -51,17 +53,18 @@ char const* lTheOpenFileName;
 char const* lFilterPatterns[2] = { "*.obj" };
 FILE* lIn;
 
-string openFile();
+//scene atributes
+float backgroundColor[4] = {0.0f, 1.0f, 1.0f,1.0f};
+glm::vec3 eyePos = { 0.0f,0.0f,0.0f };
 
+//obj atributes
 vector<obj*> objects;
+obj* actual=nullptr;
+
+
 
 bool firstMouse = true;
 
-
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-
-void do_movement(GLfloat delta);
-
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
-
 int main();
+
+
