@@ -6,7 +6,7 @@ public:
 
     // data =  x,y,z,nx,ny,nz,x,y,z,nx,ny,nz, .... 
     subObj(GLfloat* data, int size) {
-        this->size = size;
+        this->size = size/sizeof(data);
         // First, set the container's VAO (and VBO)
         glGenVertexArrays(1, &containerVAO);
         glBindVertexArray(containerVAO);

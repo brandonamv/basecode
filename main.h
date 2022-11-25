@@ -63,7 +63,9 @@ obj* actual=nullptr;
 
 
 
-bool firstMouse = true;
+bool firstMouse = false;
+bool rotation=false, moving=false;
+double xini, yini;
 
 int main();
 

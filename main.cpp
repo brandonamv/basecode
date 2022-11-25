@@ -71,6 +71,8 @@ int main(){
 
     // OpenGL options
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    glPolygonOffset(1.0, 1.0);
 
     // Build and compile our shader program
     Shader basic_shader("color_shader.vs", "color_shader.frag");
@@ -93,9 +95,9 @@ int main(){
     static bool zBuffer;
     static bool backFaceCulling;
     static bool antialliasing;
-    float size;
+    float sx,sy,sz;
     float pointSize;
-    float *objColor,*lineColor,*pointColor;
+    float *objColor,*lineColor,*pointColor,*boundingColor;
 
     // Game loop
     // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -172,6 +174,14 @@ int main(){
             else {
                 glDisable(GL_CULL_FACE);
             }
+            ImGui::Checkbox("Z-Buffer", &zBuffer);
+            if (zBuffer)
+            {
+                glEnable(GL_DEPTH_TEST);
+            }
+            else {
+                glDisable(GL_DEPTH_TEST);
+            }
             ImGui::Checkbox("Antialliasing", &antialliasing);
             if (antialliasing)
             {
@@ -195,9 +205,19 @@ int main(){
         if (actual)
         {
             //// Slider that appears in the window
-            size = actual->getTam();
-            ImGui::SliderFloat("Size", &size, 0.1f, 10.0f);
-            actual->setTam(size);
+            sx = actual->getTam().x;
+            sy = actual->getTam().y;
+            sz = actual->getTam().z;
+            ImGui::SliderFloat("Size x", &sx, 0.1f, 30.0f);
+            ImGui::SliderFloat("Size y", &sy, 0.1f, 30.0f);
+            ImGui::SliderFloat("Size z", &sz, 0.1f, 30.0f);
+            actual->setTam(sx, sy, sz);
+
+            //// Fancy color editor that appears in the window
+            boundingColor = actual->getBouningColor();
+            ImGui::ColorEdit3("BoundingBox Color", boundingColor);
+            actual->setBouningColor(boundingColor);
+
             //// Checkbox that appears in the window
             filledTriangle = actual->getFilled();
             ImGui::Checkbox("Filled Triangles", &filledTriangle);
@@ -222,6 +242,7 @@ int main(){
             vertexPoint = actual->getPointed();
             ImGui::Checkbox("Vertex Point", &vertexPoint);
             actual->setPointed(vertexPoint);
+            
             if (vertexPoint)
             {
                 //// Fancy color editor that appears in the window
@@ -238,7 +259,7 @@ int main(){
         
         //// Ends the window
         ImGui::End();
-
+        
         // Create camera transformations
         glm::mat4 view = glm::lookAt(eyePos, glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         glm::mat4 projection = glm::perspective(60.0f * 3.14159f / 180.0f, float(w)/float(h), 0.01f, 100.0f);
@@ -254,6 +275,7 @@ int main(){
             for (const auto &x:objects)
             {
                 x->draw(objectColorLoc,modelLoc);
+                x->setSelect(x == actual);
             }
         }
 
@@ -282,9 +304,23 @@ void mouseClick(GLFWwindow* window, int button, int action, int mods)
     GLfloat xoffset = x - lastX;
     // Reversed since y-coordinates go from bottom to left
     GLfloat yoffset = lastY - y;
-    for (int i = 0; i < objects.size(); i++)
+    /*for (int i = 0; i < objects.size(); i++)
     {
         objects[i]->onClick(xoffset,yoffset);
+    }*/
+    if (action)
+    {
+        firstMouse = true;
+        xini = xoffset;
+        yini = yoffset;
+        rotation = button == GLFW_MOUSE_BUTTON_1;
+        moving = button == GLFW_MOUSE_BUTTON_2;
+    }
+    else
+    {
+        firstMouse = false;
+        rotation = false;
+        moving = false;
     }
 }
 
@@ -307,6 +343,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         {
             objects.push_back(new obj(objeto));
             actual = objects.back();
+            actual->setSelect(true);
         }
         
     }
@@ -337,16 +374,27 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
     if (firstMouse)
     {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
+        lastX = WIDTH/2;
+        lastY = HEIGHT/2;
+    
+        GLfloat xoffset = xpos - lastX;
+        // Reversed since y-coordinates go from bottom to left
+        GLfloat yoffset = lastY - ypos;  
+        //glfwSetCursorPos(window, WIDTH/2, HEIGHT/2);
+        GLfloat dx = xoffset - xini;
+        GLfloat dy = yoffset - yini;
+        
+        if (actual)
+        {
+            if (rotation)
+                actual->rotateObj(dy/10, dx/10);
+            if (moving)
+                actual->traslateObj(dx/100, dy/100, 0);
+                
+        }
+        xini = xoffset;
+        yini = yoffset;
     }
-    GLfloat xoffset = xpos - lastX;
-    // Reversed since y-coordinates go from bottom to left
-    GLfloat yoffset = lastY - ypos;  
-    //glfwSetCursorPos(window, WIDTH/2, HEIGHT/2);
-    lastX = WIDTH / 2;// xpos;
-    lastY = HEIGHT / 2; // ypos;
 
 }
 

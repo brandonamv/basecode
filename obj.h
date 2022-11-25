@@ -21,6 +21,14 @@ class obj
             fill_color[1] = color[1];
             fill_color[2] = color[2];
         }
+        float* getBouningColor() {
+            return bounding_color;
+        }
+        void setBouningColor(float* color) {
+            bounding_color[0] = color[0];
+            bounding_color[1] = color[1];
+            bounding_color[2] = color[2];
+        }
         float* getLineColor() {
             return line_color;
         }
@@ -38,11 +46,11 @@ class obj
             point_color[2] = color[2];
         }
 
-        float getTam() {
+        glm::vec3 getTam() {
             return scale;
         }
-        void setTam(float scala) {
-            scale = scala;
+        void setTam(float sx,float sy,float sz) {
+            scale = {sx,sy,sz};
         }
         float getPointSize() {
             return point_size;
@@ -69,12 +77,21 @@ class obj
         void setPointed(bool value) {
             point = value;
         }
+        bool getSelect() {
+            return selected;
+        }
+        void setSelect(bool value) {
+            selected = value;
+        }
 
         bool onClick(int x, int y);
         struct mat
         {
             string name;
-            glm::vec3 color;
+            string map_ka;
+            glm::vec3 kd,ka,ks;
+            int illum;
+            float ns, d;
         };
         struct face
         {
@@ -90,31 +107,36 @@ class obj
 
         void draw(GLint objectColorLoc, GLint modelLoc);
 
+        void rotateObj(float x, float y);
+        void traslateObj(float x, float y,float z);
+
 	private:
         // Variables para los shaders
         float x_angle = 0.0f;
         float y_angle = 0.0f;
-        glm::vec3 tras_vector = { 0.0f,0.0f,-3.0f };
+        glm::vec3 tras_vector = { 0.0f,0.0f,-2.0f };
         glm::vec3 scale_vector = { 1.0f,1.0f,1.0f };
         float fill_color[4] = {.7f,.7f,.7f,1.0f};
         float line_color[4] = { 0.0f,1.0f,0.0f,1.0f };
         float point_color[4] = { 1.0f,0.0f,0.0f,1.0f };
+        float bounding_color[4] = { 0.0f,0.0f,1.0f,1.0f };
         // Variables de datos de objetos
         vector <string> aux;
         vector <glm::vec3> temp_vertices;
         vector <glm::vec3> temp_normals;
         vector <face> faces;
         vector <mat> materials;
-        vector <GLfloat> objVertex,faceNormal,vertexNormal;
+        vector <GLfloat> objVertex,faceNormal,vertexNormal,lineVertex,pointVertex;
         glm::vec3 max, min;
         int normal, vertice;
-        float scale = 1.0f,point_size=2.0f;
-        bool filled, point, line;
+        glm::vec3 scale = { 1.0f,1.0f,1.0f };
+        float point_size=2.0f;
+        bool filled, point, line,selected;
         vector<baseNormal> calcNormal;
 
         subObj* mesh;
         GLuint boundingVBO, boundingVAO, vertexVBO, vertexVAO, facesVBO, facesVAO;
-        glm::mat4 model,ident= glm::mat4(1.0f);
+        glm::mat4 model;
 
         void loadObj(string filename);
 
@@ -141,16 +163,28 @@ inline obj::obj(string fileName)
         mat tempMaterial;
         while (getline(MyReadFile, aux)) {
             if (aux.size() < 1)continue;
-            if (aux[0] != 'n' && aux[0] != 'K')continue;
             temp = split(aux, ' ');
-            if (strcmp(temp[0].data(), "newmtl") == 0)
+            if (temp[0][0] == 'K')
+            {
+                if (temp[0][1] == 'a')
+                    materials.back().ka = { stof(temp[1]),stof(temp[2]),stof(temp[3]) };
+                else if (temp[0][1] == 'd')
+                    materials.back().kd = { stof(temp[1]),stof(temp[2]),stof(temp[3]) };
+                else if (temp[0][1] == 's')
+                    materials.back().ks = { stof(temp[1]),stof(temp[2]),stof(temp[3]) };
+            }
+            else if (temp[0][0] == 'N')
+                materials.back().ns = stof(temp[1].data());
+            else if (temp[0][0] == 'd')
+                materials.back().d = stof(temp[1].data());
+            else if (temp[0][0] == 'i')
+                materials.back().illum = stoi(temp[1].data());
+            else if (temp[0][0] == 'm')
+                materials.back().map_ka = temp[1];
+            else if (strcmp(temp[0].data(), "newmtl") == 0)
             {
                 tempMaterial.name = temp[1]; 
                 materials.push_back(tempMaterial);
-            }
-            else if(strcmp(temp[0].data(), "Kd") == 0)
-            {
-                materials.back().color = { stof(temp[1]),stof(temp[2]),stof(temp[3])};
             }
         }
     }
@@ -194,61 +228,61 @@ inline obj::obj(string fileName)
         }
     }
     float bounding[] = {
-        max.x,max.y,max.z,
-        min.x,max.y,max.z,
-        max.x,max.y,max.z,
-        max.x,min.y,max.z,
-        min.x,min.y,max.z,
-        max.x,min.y,max.z,
-        min.x,min.y,max.z,
-        min.x,max.y,max.z,//cuadrado frontal
-        max.x,max.y,min.z,
-        min.x,max.y,min.z,
-        max.x,max.y,min.z,
-        max.x,min.y,min.z,
-        min.x,min.y,min.z,
-        max.x,min.y,min.z,
-        min.x,min.y,min.z,
-        min.x,max.y,min.z,//cuadrado trasero
+        min.x,max.y,max.z, 1.0f,1.0f,1.0f,
+        max.x,max.y,max.z, 1.0f,1.0f,1.0f,
+        min.x,min.y,max.z, 1.0f,1.0f,1.0f,
+        max.x,min.y,max.z, 1.0f,1.0f,1.0f,
+        max.x,min.y,max.z, 1.0f,1.0f,1.0f,
+        max.x,max.y,max.z, 1.0f,1.0f,1.0f,
+        min.x,min.y,max.z, 1.0f,1.0f,1.0f,
+        min.x,max.y,max.z, 1.0f,1.0f,1.0f,//cuadrado frontal
+        max.x,max.y,min.z, 1.0f,1.0f,1.0f,
+        min.x,max.y,min.z, 1.0f,1.0f,1.0f,
+        max.x,max.y,min.z, 1.0f,1.0f,1.0f,
+        max.x,min.y,min.z, 1.0f,1.0f,1.0f,
+        min.x,min.y,min.z, 1.0f,1.0f,1.0f,
+        max.x,min.y,min.z, 1.0f,1.0f,1.0f,
+        min.x,min.y,min.z, 1.0f,1.0f,1.0f,
+        min.x,max.y,min.z, 1.0f,1.0f,1.0f,//cuadrado trasero
+        max.x,max.y,max.z, 1.0f,1.0f,1.0f,
+        max.x,max.y,min.z, 1.0f,1.0f,1.0f,
+        max.x,min.y,max.z, 1.0f,1.0f,1.0f,
+        max.x,min.y,min.z, 1.0f,1.0f,1.0f, 
+        min.x,max.y,max.z, 1.0f,1.0f,1.0f, 
+        min.x,max.y,min.z, 1.0f,1.0f,1.0f,
+        min.x,min.y,max.z, 1.0f,1.0f,1.0f,
+        min.x,min.y,min.z, 1.0f,1.0f,1.0f
     };
     filled = true;
     line = true;
     point=true;
-    
-    //glGenVertexArrays(1, &boundingVAO);
-    //// 1. bind Vertex Array Object
-    //glBindVertexArray(boundingVAO);
-    //// 2. copy our vertices array in a buffer for OpenGL to use
-    //glGenBuffers(1, &boundingVBO);
-    //glBindBuffer(GL_ARRAY_BUFFER, boundingVBO);
-    //glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat), bounding, GL_STATIC_DRAW);
-    //// 3. then set our vertex attributes pointers
-    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    //glEnableVertexAttribArray(0);
-
-    //GLfloat* temp= vertexNormal.data();
+    glGenVertexArrays(1, &boundingVAO);
+    // 1. bind Vertex Array Object
+    glBindVertexArray(boundingVAO);
+    // 2. copy our vertices array in a buffer for OpenGL to use
+    glGenBuffers(1, &boundingVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, boundingVBO);
+    glBufferData(GL_ARRAY_BUFFER,sizeof(bounding)*6, bounding, GL_STATIC_DRAW);
+    // 3. then set our vertex attributes pointers
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    // Color attribute
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(2);
+    //GLfloat* temparray= vertexNormal.data();
     //glGenVertexArrays(1, &vertexVAO);
     //// 1. bind Vertex Array Object
     //glBindVertexArray(vertexVAO);
     //// 2. copy our vertices array in a buffer for OpenGL to use
     //glGenBuffers(1, &vertexVBO);
     //glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
-    //glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat), temp, GL_STATIC_DRAW);
+    //glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*vertexNormal.size(), temparray, GL_STATIC_DRAW);
     //// 3. then set our vertex attributes pointers
     //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     //glEnableVertexAttribArray(0);
+    //glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    //glEnableVertexAttribArray(2);
 
-    //temp = faceNormal.data();
-    //glGenVertexArrays(1, &facesVAO);
-    //// 1. bind Vertex Array Object
-    //glBindVertexArray(facesVAO);
-    //// 2. copy our vertices array in a buffer for OpenGL to use
-    //glGenBuffers(1, &facesVBO);
-    //glBindBuffer(GL_ARRAY_BUFFER, facesVBO);
-    //glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat), temp, GL_STATIC_DRAW);
-    //// 3. then set our vertex attributes pointers
-    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    //glEnableVertexAttribArray(0);
 
     scale_vector.x =1.0f/df;
     scale_vector.y =1.0f/df;
@@ -266,6 +300,8 @@ inline obj::~obj()
     objVertex.clear();
     temp_normals.clear();
     temp_vertices.clear();
+    glDeleteVertexArrays(1, &boundingVAO);
+    glDeleteBuffers(1, &boundingVBO);
 }
 
 void obj::draw(GLint objectColorLoc, GLint modelLoc)
@@ -273,38 +309,42 @@ void obj::draw(GLint objectColorLoc, GLint modelLoc)
     // Use cooresponding shader when setting uniforms/drawing objects
     glUniform3f(objectColorLoc, fill_color[0], fill_color[1], fill_color[2]);
     model =
-        glm::translate(ident, tras_vector+trasScene) *
-        glm::rotate(ident, y_angle, glm::vec3(0.0f, 1.0f, 0.0f)) *
-        glm::rotate(ident, x_angle, glm::vec3(1.0f, 0.0f, 0.0f)) *
-        glm::scale(ident, scale_vector*scale);
+        glm::translate(glm::mat4(1.0f), tras_vector+trasScene) *
+        glm::rotate(glm::mat4(1.0f), y_angle, glm::vec3(0.0f, 1.0f, 0.0f)) *
+        glm::rotate(glm::mat4(1.0f), x_angle, glm::vec3(1.0f, 0.0f, 0.0f)) *
+        glm::scale(glm::mat4(1.0f), scale_vector*scale);
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-    /*glBindVertexArray(VAO);
-    glDrawArrays(GL_LINES, 0, 48);*/
+    
     if (filled)
     {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         mesh->draw();
     }
-    if (point)
+    if (selected)
     {
-        glUniform3f(objectColorLoc, point_color[0], point_color[1], point_color[2]);
-        glPointSize(point_size);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
-        mesh->draw();
+        glUniform3f(objectColorLoc, bounding_color[0], bounding_color[1], bounding_color[2]);
+        glBindVertexArray(boundingVAO);
+        glDrawArrays(GL_LINES, 0, 24);
+        if (point)
+        {
+            glUniform3f(objectColorLoc, point_color[0], point_color[1], point_color[2]);
+            glPointSize(point_size);
+            glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+            mesh->draw();
+        }
+    
+        if (line)
+        {
+            glUniform3f(objectColorLoc, line_color[0], line_color[1], line_color[2]);
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            mesh->draw();
+        }
     }
     
-    if (line)
-    {
-        glUniform3f(objectColorLoc, line_color[0], line_color[1], line_color[2]);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        mesh->draw();
-    }
+    
     /*glUniform3f(objectColorLoc, line_color[0], line_color[1], line_color[2]);
     glBindVertexArray(vertexVAO);
     glDrawArrays(GL_LINES, 0, vertexNormal.size());*/
-    /*glUniform3f(objectColorLoc, line_color[0], line_color[1], line_color[2]);
-    glBindVertexArray(facesVAO);
-    glDrawArrays(GL_LINES, 0, faceNormal.size());*/
 }
 
 inline bool obj::onClick(int x, int y)
@@ -348,7 +388,7 @@ inline void obj::loadObj(string filename)
             for (int i = 0; i < materials.size(); i++)
             {
                 if (strcmp(materials[i].name.data(), temp[1].data()) != 0) continue;
-                tempMaterial.color = materials[i].color;
+                tempMaterial.kd = materials[i].kd;
             }
         }
         else if (strcmp(temp[0].data(), "v") == 0)
@@ -451,9 +491,28 @@ inline void obj::loadVertex(string const& temp, mat actual)
     vertexNormal.push_back(temp_vertices[vertice].x);
     vertexNormal.push_back(temp_vertices[vertice].y);
     vertexNormal.push_back(temp_vertices[vertice].z);
-    vertexNormal.push_back(temp_vertices[vertice].z+temp_normals[normal].x * 0.001f);
-    vertexNormal.push_back(temp_vertices[vertice].y+temp_normals[normal].y * 0.001f);
-    vertexNormal.push_back(temp_vertices[vertice].z+temp_normals[normal].z * 0.001f);
+    vertexNormal.push_back(0.5f);
+    vertexNormal.push_back(0.5f);
+    vertexNormal.push_back(0.0f);
+    vertexNormal.push_back(temp_vertices[vertice].z+temp_normals[normal].x*0.003f);
+    vertexNormal.push_back(temp_vertices[vertice].y+temp_normals[normal].y*0.003f);
+    vertexNormal.push_back(temp_vertices[vertice].z+temp_normals[normal].z* 0.003f);
+    
+    pointVertex.push_back(temp_vertices[vertice].x);
+    pointVertex.push_back(temp_vertices[vertice].y);
+    pointVertex.push_back(temp_vertices[vertice].z);
+
+    pointVertex.push_back(1.0f);
+    pointVertex.push_back(0.0f);
+    pointVertex.push_back(0.0f);
+
+    lineVertex.push_back(temp_vertices[vertice].x);
+    lineVertex.push_back(temp_vertices[vertice].y);
+    lineVertex.push_back(temp_vertices[vertice].z);
+
+    lineVertex.push_back(1.0f);
+    lineVertex.push_back(0.0f);
+    lineVertex.push_back(0.0f);
 
     if (materials.empty()) {
         objVertex.push_back(fill_color[0]);
@@ -462,9 +521,9 @@ inline void obj::loadVertex(string const& temp, mat actual)
     }
     else
     {
-        objVertex.push_back(actual.color.x);
-        objVertex.push_back(actual.color.y);
-        objVertex.push_back(actual.color.z);
+        objVertex.push_back(actual.kd.x);
+        objVertex.push_back(actual.kd.y);
+        objVertex.push_back(actual.kd.z);
     }
 
     
@@ -496,14 +555,20 @@ inline void obj::setVertexNormal(face temp, int i) {
     objVertex.push_back(temp_vertices[temp.vertex[i]].x);
     objVertex.push_back(temp_vertices[temp.vertex[i]].y);
     objVertex.push_back(temp_vertices[temp.vertex[i]].z);
+    lineVertex.push_back(temp_vertices[temp.vertex[i]].x);
+    lineVertex.push_back(temp_vertices[temp.vertex[i]].y);
+    lineVertex.push_back(temp_vertices[temp.vertex[i]].z);
     objVertex.push_back(calcNormal[temp.vertex[i]].normal.x);
     objVertex.push_back(calcNormal[temp.vertex[i]].normal.y);
     objVertex.push_back(calcNormal[temp.vertex[i]].normal.z);
+    lineVertex.push_back(line_color[0]);
+    lineVertex.push_back(line_color[1]);
+    lineVertex.push_back(line_color[2]);
     if (!materials.empty())
     {
-        objVertex.push_back(temp.material.color.x);
-        objVertex.push_back(temp.material.color.y);
-        objVertex.push_back(temp.material.color.z);
+        objVertex.push_back(temp.material.kd.x);
+        objVertex.push_back(temp.material.kd.y);
+        objVertex.push_back(temp.material.kd.z);
     }
     else
     {
@@ -511,4 +576,15 @@ inline void obj::setVertexNormal(face temp, int i) {
         objVertex.push_back(fill_color[1]);
         objVertex.push_back(fill_color[2]);
     }
+}
+
+inline void obj::rotateObj(float x, float y)
+{
+    x_angle += x;
+    y_angle += y;
+}
+
+inline void obj::traslateObj(float x, float y, float z) {
+    tras_vector.x += x;
+    tras_vector.y += y;
 }
