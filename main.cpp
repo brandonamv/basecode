@@ -96,8 +96,7 @@ int main(){
     static bool backFaceCulling;
     static bool antialliasing;
     float sx,sy,sz;
-    float pointSize;
-    float *objColor,*lineColor,*pointColor,*boundingColor;
+    float *objColor,*boundingColor;
 
     // Game loop
     // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -109,7 +108,7 @@ int main(){
     GLint modelLoc = glGetUniformLocation(basic_shader.Program, "model");
     GLint viewLoc = glGetUniformLocation(basic_shader.Program, "view");
     GLint projLoc = glGetUniformLocation(basic_shader.Program, "projection");
-
+    cam = new camera(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     while (!glfwWindowShouldClose(window))
     {
         // Calculate deltatime of current frame
@@ -148,6 +147,7 @@ int main(){
                     {
                         objects.push_back(new obj(objeto));
                         actual = objects.back();
+                        actual->traslateObj(cam->getcameraFront().x, cam->getcameraFront().y, cam->getcameraFront().z);
                     }
                 }
                 if (ImGui::MenuItem("Save", "Ctrl+S")) { /* Do stuff */ }
@@ -218,42 +218,10 @@ int main(){
             ImGui::ColorEdit3("BoundingBox Color", boundingColor);
             actual->setBouningColor(boundingColor);
 
-            //// Checkbox that appears in the window
-            filledTriangle = actual->getFilled();
-            ImGui::Checkbox("Filled Triangles", &filledTriangle);
-            actual->setFilled(filledTriangle);
-            if (filledTriangle)
-            {
-                //// Fancy color editor that appears in the window
-                objColor = actual->getFillColor();
-                ImGui::ColorEdit3("Triangle Fill Color", objColor);
-                actual->setFillColor(objColor);
-            }
-            lineTriangle = actual->getLined();
-            ImGui::Checkbox("Triangle Lines", &lineTriangle);
-            actual->setLined(lineTriangle);
-            if (lineTriangle)
-            {
-                //// Fancy color editor that appears in the window
-                lineColor = actual->getLineColor();
-                ImGui::ColorEdit3("Triangle Line Color", lineColor);
-                actual->setLineColor(lineColor);
-            }
-            vertexPoint = actual->getPointed();
-            ImGui::Checkbox("Vertex Point", &vertexPoint);
-            actual->setPointed(vertexPoint);
-            
-            if (vertexPoint)
-            {
-                //// Fancy color editor that appears in the window
-                pointColor = actual->getPointColor();
-                ImGui::ColorEdit3("Vertex Point Color", pointColor);
-                actual->setPointColor(pointColor);
-
-                pointSize = actual->getPointSize();
-                ImGui::SliderFloat("Point Size", &pointSize, 0.1f, 10.0f);
-                actual->setPointSize(pointSize);
-            }
+            //// Fancy color editor that appears in the window
+            objColor = actual->getFillColor();
+            ImGui::ColorEdit3("Triangle Fill Color", objColor);
+            actual->setFillColor(objColor);
         }
         
         
@@ -261,7 +229,7 @@ int main(){
         ImGui::End();
         
         // Create camera transformations
-        glm::mat4 view = glm::lookAt(eyePos, glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 view = cam->getView();
         glm::mat4 projection = glm::perspective(60.0f * 3.14159f / 180.0f, float(w)/float(h), 0.01f, 100.0f);
         
 
@@ -304,10 +272,6 @@ void mouseClick(GLFWwindow* window, int button, int action, int mods)
     GLfloat xoffset = x - lastX;
     // Reversed since y-coordinates go from bottom to left
     GLfloat yoffset = lastY - y;
-    /*for (int i = 0; i < objects.size(); i++)
-    {
-        objects[i]->onClick(xoffset,yoffset);
-    }*/
     if (action)
     {
         firstMouse = true;
@@ -315,6 +279,13 @@ void mouseClick(GLFWwindow* window, int button, int action, int mods)
         yini = yoffset;
         rotation = button == GLFW_MOUSE_BUTTON_1;
         moving = button == GLFW_MOUSE_BUTTON_2;
+        glm::vec2 mouse = glm::vec2(x, y);
+        mouse = glm::normalize(mouse);
+        
+        for (int i = 0; i < objects.size(); i++)
+        {
+            objects[i]->onClick(mouse.x, mouse.y);
+        }
     }
     else
     {
@@ -352,22 +323,18 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 void do_movement(GLfloat delta)
 {
     // Camera controls
-    if (keys[GLFW_KEY_UP])
-    {
-        trasScene.z += delta;
-    }
-    if (keys[GLFW_KEY_DOWN])
-    {
-        trasScene.z -= delta;
-    }
-    /*if (keys[GLFW_KEY_RIGHT])
-    {
-        trasScene.x -= delta;
-    }
-    if (keys[GLFW_KEY_LEFT])
-    {
-        trasScene.x += delta;
-    }*/
+    if (keys[GLFW_KEY_W])
+        cam->move_front();
+    if (keys[GLFW_KEY_S])
+        cam->move_back();
+    if (keys[GLFW_KEY_D])
+        cam->move_right();
+    if (keys[GLFW_KEY_A])
+        cam->move_left();
+    if (keys[GLFW_KEY_Q])
+        cam->move_up();
+    if (keys[GLFW_KEY_E])
+        cam->move_down();
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
