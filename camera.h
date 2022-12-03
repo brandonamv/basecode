@@ -2,7 +2,6 @@
 class camera {
 public:
     camera(glm::vec3 pos, glm::vec3 center, glm::vec3 up, glm::vec3 left);
-    ~camera();
     
     auto getView();
 

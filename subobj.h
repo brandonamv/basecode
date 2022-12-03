@@ -18,17 +18,15 @@ public:
         glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
 
         // Position attribute
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,11 * sizeof(GLfloat), (GLvoid*)0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,8 * sizeof(GLfloat), (GLvoid*)0);
         glEnableVertexAttribArray(0);
         // Normal attribute
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,11 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
         glEnableVertexAttribArray(1);
-        // Color attribute
-        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE,11 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
-        glEnableVertexAttribArray(2);
         // texture attribute
-        glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE,11 * sizeof(GLfloat), (GLvoid*)(9 * sizeof(GLfloat)));
-        glEnableVertexAttribArray(3); 
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE,8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
+        glEnableVertexAttribArray(2);
+
         stbi_set_flip_vertically_on_load(true);
         int width, height, nrChannels;
         glGenTextures(1, &texture);

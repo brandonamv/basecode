@@ -13,14 +13,37 @@ class obj
 		obj(string fileName);
 		~obj();
         
-        float* getFillColor() {
-            return fill_color;
+        float* getDifuse_color() {
+            return difuse_color;
         }
-        void setFillColor(float* color) {
-            fill_color[0] = color[0];
-            fill_color[1] = color[1];
-            fill_color[2] = color[2];
+        void setDifuse_color(float* color) {
+            difuse_color[0] = color[0];
+            difuse_color[1] = color[1];
+            difuse_color[2] = color[2];
         }
+        float* getSpecular_color() {
+            return specular_color;
+        }
+        void setSpecular_color(float* color) {
+            specular_color[0] = color[0];
+            specular_color[1] = color[1];
+            specular_color[2] = color[2];
+        }
+        float* getAmbient_color() {
+            return ambient_color;
+        }
+        void setAmbient_color(float* color) {
+            ambient_color[0] = color[0];
+            ambient_color[1] = color[1];
+            ambient_color[2] = color[2];
+        }
+        float getShininess() {
+            return shininess;
+        }
+        void setShininess(float color) {
+            shininess = color;
+        }
+
         float* getBouningColor() {
             return bounding_color;
         }
@@ -50,7 +73,6 @@ class obj
             string name;
             string map_ka;
             glm::vec3 kd,ka,ks;
-            int illum;
             float ns, d;
         };
         struct face
@@ -72,7 +94,7 @@ class obj
             mat material;
         };
 
-        void draw(GLint objectColorLoc, GLint modelLoc);
+        void draw(Shader basic_shader);
 
         void rotateObj(float x, float y);
         void traslateObj(float x, float y,float z);
@@ -83,7 +105,11 @@ class obj
         float y_angle = 0.0f;
         glm::vec3 tras_vector = { 0.0f,0.0f,-2.0f };
         glm::vec3 scale_vector = { 1.0f,1.0f,1.0f };
-        float fill_color[4] = {.7f,.7f,.7f,1.0f};
+        //colores
+        float difuse_color[4] = {.7f,.7f,.7f,1.0f};
+        float specular_color[4] = { .7f,.7f,.7f,1.0f };
+        float ambient_color[4] = { .0f,.0f,.0f,1.0f };
+        float shininess = 20.0;
         float bounding_color[4] = { 0.0f,0.0f,1.0f,1.0f };
         // Variables de datos temporales de objetos
         vector <glm::vec3> temp_vertices;
@@ -113,7 +139,7 @@ class obj
 
         void loadObj(string filename);
 
-        void loadVertex(string const& temp, mat actual);
+        void loadVertex(string const& temp);
 
         vector<string> split(string const& original, char separator);
 
@@ -150,8 +176,6 @@ inline obj::obj(string fileName)
                 vector_materials.back().ns = stof(temp[1].data());
             else if (temp[0][0] == 'd')
                 vector_materials.back().d = stof(temp[1].data());
-            else if (temp[0][0] == 'i')
-                vector_materials.back().illum = stoi(temp[1].data());
             else if (temp[0][0] == 'm')
                 vector_materials.back().map_ka = temp[1];
             else if (strcmp(temp[0].data(), "newmtl") == 0)
@@ -200,31 +224,31 @@ inline obj::obj(string fileName)
             df = dz;
         }
     }
-    float bounding[] = {
-        min.x,max.y,max.z, 1.0f,1.0f,1.0f,
-        max.x,max.y,max.z, 1.0f,1.0f,1.0f,
-        min.x,min.y,max.z, 1.0f,1.0f,1.0f,
-        max.x,min.y,max.z, 1.0f,1.0f,1.0f,
-        max.x,min.y,max.z, 1.0f,1.0f,1.0f,
-        max.x,max.y,max.z, 1.0f,1.0f,1.0f,
-        min.x,min.y,max.z, 1.0f,1.0f,1.0f,
-        min.x,max.y,max.z, 1.0f,1.0f,1.0f,//cuadrado frontal
-        max.x,max.y,min.z, 1.0f,1.0f,1.0f,
-        min.x,max.y,min.z, 1.0f,1.0f,1.0f,
-        max.x,max.y,min.z, 1.0f,1.0f,1.0f,
-        max.x,min.y,min.z, 1.0f,1.0f,1.0f,
-        min.x,min.y,min.z, 1.0f,1.0f,1.0f,
-        max.x,min.y,min.z, 1.0f,1.0f,1.0f,
-        min.x,min.y,min.z, 1.0f,1.0f,1.0f,
-        min.x,max.y,min.z, 1.0f,1.0f,1.0f,//cuadrado trasero
-        max.x,max.y,max.z, 1.0f,1.0f,1.0f,
-        max.x,max.y,min.z, 1.0f,1.0f,1.0f,
-        max.x,min.y,max.z, 1.0f,1.0f,1.0f,
-        max.x,min.y,min.z, 1.0f,1.0f,1.0f,
-        min.x,max.y,max.z, 1.0f,1.0f,1.0f,
-        min.x,max.y,min.z, 1.0f,1.0f,1.0f,
-        min.x,min.y,max.z, 1.0f,1.0f,1.0f,
-        min.x,min.y,min.z, 1.0f,1.0f,1.0f
+    GLfloat bounding[] = {
+        min.x,max.y,max.z,
+        max.x,max.y,max.z,
+        min.x,min.y,max.z,
+        max.x,min.y,max.z, 
+        max.x,min.y,max.z, 
+        max.x,max.y,max.z, 
+        min.x,min.y,max.z, 
+        min.x,max.y,max.z,//cuadrado frontal
+        max.x,max.y,min.z, 
+        min.x,max.y,min.z,
+        max.x,max.y,min.z, 
+        max.x,min.y,min.z, 
+        min.x,min.y,min.z, 
+        max.x,min.y,min.z,
+        min.x,min.y,min.z, 
+        min.x,max.y,min.z, //cuadrado trasero
+        max.x,max.y,max.z, 
+        max.x,max.y,min.z, 
+        max.x,min.y,max.z, 
+        max.x,min.y,min.z, 
+        min.x,max.y,max.z, 
+        min.x,max.y,min.z, 
+        min.x,min.y,max.z,
+        min.x,min.y,min.z
     };
     glGenVertexArrays(1, &boundingVAO);
     // 1. bind Vertex Array Object
@@ -232,13 +256,10 @@ inline obj::obj(string fileName)
     // 2. copy our vertices array in a buffer for OpenGL to use
     glGenBuffers(1, &boundingVBO);
     glBindBuffer(GL_ARRAY_BUFFER, boundingVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(bounding) * 6, bounding, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 72, bounding, GL_STATIC_DRAW);
     // 3. then set our vertex attributes pointers
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
     glEnableVertexAttribArray(0);
-    // Color attribute
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-    glEnableVertexAttribArray(2);
 
     scale_vector.x = 1.0f / df;
     scale_vector.y = 1.0f / df;
@@ -246,7 +267,7 @@ inline obj::obj(string fileName)
     max = max / df;
     min = min / df;
 
-
+    
     vector<string> base = split(fileName, '\\');
     string image;
     base.pop_back();
@@ -279,27 +300,49 @@ inline obj::~obj()
     glDeleteBuffers(1, &boundingVBO);
 }
 
-inline void obj::draw(GLint objectColorLoc, GLint modelLoc)
+inline void obj::draw(Shader basic_shader)
 {
     // Use cooresponding shader when setting uniforms/drawing objects
-    glUniform3f(objectColorLoc, fill_color[0], fill_color[1], fill_color[2]);
+    /*uniform vec4 Ka, Kd, Ks;
+    uniform float alfa, shininess;*/
+    GLint ambientColorLoc = glGetUniformLocation(basic_shader.Program, "Ka");
+    GLint difuseColorLoc = glGetUniformLocation(basic_shader.Program, "Kd");
+    GLint specularColorLoc = glGetUniformLocation(basic_shader.Program, "Ks");
+    GLint shininessLoc = glGetUniformLocation(basic_shader.Program, "shininess");
+    GLint modelLoc = glGetUniformLocation(basic_shader.Program, "model");
+
+    
     model =
         glm::translate(glm::mat4(1.0f), tras_vector) *
         glm::rotate(glm::mat4(1.0f), y_angle, glm::vec3(0.0f, 1.0f, 0.0f)) *
         glm::rotate(glm::mat4(1.0f), x_angle, glm::vec3(1.0f, 0.0f, 0.0f)) *
         glm::scale(glm::mat4(1.0f), scale_vector * scale);
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
+    
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     for (int i = 0; i < vector_mesh.size(); i++)
     {
+        if (vector_materials.empty())
+        {
+            glUniform3f(ambientColorLoc, ambient_color[0], ambient_color[1], ambient_color[2]);
+            glUniform3f(difuseColorLoc, difuse_color[0], difuse_color[1], difuse_color[2]);
+            glUniform3f(specularColorLoc, specular_color[0], difuse_color[1], difuse_color[2]);
+            glUniform1f(shininessLoc, shininess);
+        }
+        else
+        {
+            glUniform3f(ambientColorLoc, vector_mesh[i].material.ka.x, vector_mesh[i].material.ka.y, vector_mesh[i].material.ka.z);
+            glUniform3f(difuseColorLoc, vector_mesh[i].material.kd.x, vector_mesh[i].material.kd.y, vector_mesh[i].material.kd.z);
+            glUniform3f(specularColorLoc, vector_mesh[i].material.ks.x, vector_mesh[i].material.ks.y, vector_mesh[i].material.ks.z);
+            glUniform1f(shininessLoc, vector_mesh[i].material.ns);
+        }
         vector_mesh[i].meshs->draw();
     }
     if (selected)
     {
-        glUniform3f(objectColorLoc, bounding_color[0], bounding_color[1], bounding_color[2]);
+        glUniform3f(difuseColorLoc, bounding_color[0], bounding_color[1], bounding_color[2]);
         glBindVertexArray(boundingVAO);
-        glDrawArrays(GL_LINES, 0, 24);
+        glDrawArrays(GL_LINES, 0, 72);
     }
 
 }
@@ -392,13 +435,13 @@ inline void obj::loadObj(string filename)
             n = glm::cross((a - b), (a - c));
             if (!temp_normals.empty())
             {
-                loadVertex(temp[1], tempMaterial);
-                loadVertex(temp[2], tempMaterial);
-                loadVertex(temp[3], tempMaterial);
+                loadVertex(temp[1]);
+                loadVertex(temp[2]);
+                loadVertex(temp[3]);
                 if (temp.size() < 5)continue;
-                loadVertex(temp[1], tempMaterial);
-                loadVertex(temp[3], tempMaterial);
-                loadVertex(temp[4], tempMaterial);
+                loadVertex(temp[1]);
+                loadVertex(temp[3]);
+                loadVertex(temp[4]);
             }
             else
             {
@@ -423,7 +466,7 @@ inline void obj::loadObj(string filename)
     }
 }
 
-inline void obj::loadVertex(string const& temp, mat actual)
+inline void obj::loadVertex(string const& temp)
 {
     vector<string> aux;
     int vertice, normal, textures;
@@ -440,18 +483,6 @@ inline void obj::loadVertex(string const& temp, mat actual)
     vector_mesh.back().obj_data.push_back(temp_normals[normal].y);
     vector_mesh.back().obj_data.push_back(temp_normals[normal].z);
 
-    if (vector_materials.empty()) {
-        vector_mesh.back().obj_data.push_back(fill_color[0]);
-        vector_mesh.back().obj_data.push_back(fill_color[1]);
-        vector_mesh.back().obj_data.push_back(fill_color[2]);
-    }
-    else
-    {
-        vector_mesh.back().obj_data.push_back(actual.kd.x);
-        vector_mesh.back().obj_data.push_back(actual.kd.y);
-        vector_mesh.back().obj_data.push_back(actual.kd.z);
-
-    }
 
     if (temp_textures.empty())
     {
@@ -500,19 +531,6 @@ inline void obj::setVertexNormal(face temp, int i) {
     vector_mesh[i].obj_data.push_back(calcNormal[temp.vertex[i]].normal.y);
     vector_mesh[i].obj_data.push_back(calcNormal[temp.vertex[i]].normal.z);
 
-    if (!vector_materials.empty())
-    {
-        vector_mesh[i].obj_data.push_back(temp.material.kd.x);
-        vector_mesh[i].obj_data.push_back(temp.material.kd.y);
-        vector_mesh[i].obj_data.push_back(temp.material.kd.z);
-
-    }
-    else
-    {
-        vector_mesh[i].obj_data.push_back(fill_color[0]);
-        vector_mesh[i].obj_data.push_back(fill_color[1]);
-        vector_mesh[i].obj_data.push_back(fill_color[2]);
-    }
 }
 
 inline void obj::rotateObj(float x, float y)

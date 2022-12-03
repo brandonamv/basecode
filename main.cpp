@@ -104,10 +104,16 @@ int main(){
 
     basic_shader.Use();
     // Get the uniform locations
-    GLint objectColorLoc = glGetUniformLocation(basic_shader.Program, "objectColor");
-    GLint modelLoc = glGetUniformLocation(basic_shader.Program, "model");
     GLint viewLoc = glGetUniformLocation(basic_shader.Program, "view");
     GLint projLoc = glGetUniformLocation(basic_shader.Program, "projection");
+    GLint ambientLoc = glGetUniformLocation(basic_shader.Program, "ambient");
+    GLint lambertLoc = glGetUniformLocation(basic_shader.Program, "lambert");
+    GLint phongLoc = glGetUniformLocation(basic_shader.Program, "phong");
+    GLint lightColorLoc= glGetUniformLocation(basic_shader.Program, "light_color");
+    bool ambient = false;
+    bool lambert = false;
+    bool phong = false;
+    float lightColor[3] = { 1.0f,1.0f,1.0f };
     cam = new camera(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     while (!glfwWindowShouldClose(window))
     {
@@ -196,10 +202,10 @@ int main(){
         if (fpsShow)
         {
             ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-            float samples[100];
-            for (int n = 0; n < 100; n++)
-                samples[n] = sinf(0.2f + ImGui::GetIO().Framerate * 1.5f);
-            ImGui::PlotLines("Samples", samples, 100);
+            float samples[3000];
+            for (int n = 0; n < 3000; n++)
+                samples[n] = ImGui::GetIO().Framerate;
+            ImGui::PlotHistogram("Samples", samples, 3000, 0, NULL, 0.0f, 100.0f, ImVec2(300, 50));
         }
         
         if (actual)
@@ -219,15 +225,80 @@ int main(){
             actual->setBouningColor(boundingColor);
 
             //// Fancy color editor that appears in the window
-            objColor = actual->getFillColor();
-            ImGui::ColorEdit3("Triangle Fill Color", objColor);
-            actual->setFillColor(objColor);
+            objColor = actual->getDifuse_color();
+            ImGui::ColorEdit3("Triangle Difuse Color", objColor);
+            actual->setDifuse_color(objColor);
         }
         
         
         //// Ends the window
         ImGui::End();
+        ImGui::Begin("Lights Menu", &my_tool_active, ImGuiWindowFlags_MenuBar);
+        // Generate samples and plot them
+        const char* items[] = { "Ambiental", "Lambert", "Phong" };
+        static const char* current_item = NULL;
+
+        if (ImGui::BeginCombo("Light Type", current_item)) // The second parameter is the label previewed before opening the combo.
+        {
+            for (int n = 0; n < IM_ARRAYSIZE(items); n++)
+            {
+                bool is_selected = (current_item == items[n]); // You can store your selection however you want, outside or inside your objects
+                if (ImGui::Selectable(items[n], is_selected)) 
+                    current_item = items[n];
+                if (current_item == items[n])
+                {
+                    if (n==0)
+                    {
+                        ambient = true;
+                        lambert = false;
+                        phong = false;
+                    }
+                    else if (n==1)
+                    {
+                        ambient = false;
+                        lambert = true;
+                        phong=false;
+                    }
+                    else if (n==2)
+                    {
+                        ambient = false;
+                        lambert = false;
+                        phong = true;
+                    }
+                    
+                }
+                if (is_selected) 
+                    ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+                    
+            }
+            ImGui::EndCombo();
+        }
+        if (ambient)
+        {
+            ImGui::ColorEdit3("Light Color", lightColor);
+            glUniform3f(lightColorLoc, lightColor[0], lightColor[1], lightColor[2]);
+            glUniform1i(ambientLoc, ambient);
+            glUniform1i(lambertLoc, lambert);
+            glUniform1i(phongLoc, phong);
+        }
+        if (lambert)
+        {
+            ImGui::ColorEdit3("Light Color", lightColor);
+            glUniform3f(lightColorLoc, lightColor[0], lightColor[1], lightColor[2]);
+            glUniform1i(lambertLoc, lambert);
+            glUniform1i(ambientLoc, ambient);
+            glUniform1i(phongLoc, phong);
+        }
+        if (phong)
+        {
+            ImGui::ColorEdit3("Light Color", lightColor);
+            glUniform3f(lightColorLoc, lightColor[0], lightColor[1], lightColor[2]);
+            glUniform1i(lambertLoc, lambert);
+            glUniform1i(ambientLoc, ambient);
+            glUniform1i(phongLoc, phong);
+        }
         
+        ImGui::End();
         // Create camera transformations
         glm::mat4 view = cam->getView();
         glm::mat4 projection = glm::perspective(60.0f * 3.14159f / 180.0f, float(w)/float(h), 0.01f, 100.0f);
@@ -242,7 +313,7 @@ int main(){
         {
             for (const auto &x:objects)
             {
-                x->draw(objectColorLoc,modelLoc);
+                x->draw(basic_shader);
                 x->setSelect(x == actual);
             }
         }
@@ -274,14 +345,15 @@ void mouseClick(GLFWwindow* window, int button, int action, int mods)
     GLfloat yoffset = lastY - y;
     if (action)
     {
+        glm::mat4 view = cam->getView();
+        glm::mat4 projection = glm::perspective(60.0f * 3.14159f / 180.0f, float(WIDTH) / float(HEIGHT), 0.01f, 100.0f);
         firstMouse = true;
         xini = xoffset;
         yini = yoffset;
         rotation = button == GLFW_MOUSE_BUTTON_1;
         moving = button == GLFW_MOUSE_BUTTON_2;
-        glm::vec2 mouse = glm::vec2(x, y);
-        mouse = glm::normalize(mouse);
-        
+        glm::vec4 mouse = projection*view*glm::vec4(x/WIDTH, y/HEIGHT,0,0);
+        cout << mouse.x << " " << mouse.y<<endl;
         for (int i = 0; i < objects.size(); i++)
         {
             objects[i]->onClick(mouse.x, mouse.y);
