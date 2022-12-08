@@ -106,14 +106,24 @@ int main(){
     // Get the uniform locations
     GLint viewLoc = glGetUniformLocation(basic_shader.Program, "view");
     GLint projLoc = glGetUniformLocation(basic_shader.Program, "projection");
+    //variables para activar el tipo de luz
     GLint ambientLoc = glGetUniformLocation(basic_shader.Program, "ambient");
     GLint lambertLoc = glGetUniformLocation(basic_shader.Program, "lambert");
     GLint phongLoc = glGetUniformLocation(basic_shader.Program, "phong");
-    GLint lightColorLoc= glGetUniformLocation(basic_shader.Program, "light_color");
+    //variable para el color de la luz
+    GLint ambientColorLoc= glGetUniformLocation(basic_shader.Program, "ambient_color");
+    GLint lambertColorLoc = glGetUniformLocation(basic_shader.Program, "lambert_color");
+    GLint phongColorLoc = glGetUniformLocation(basic_shader.Program, "phong_color");
+    GLint optionLoc = glGetUniformLocation(basic_shader.Program, "option");
+    //booleanos controladores
     bool ambient = false;
     bool lambert = false;
     bool phong = false;
-    float lightColor[3] = { 1.0f,1.0f,1.0f };
+
+    int option=0;
+    float ambientColor[3] = { 1.0f,1.0f,1.0f };
+    float lambertColor[3] = { 1.0f,1.0f,1.0f };
+    float phongColor[3] = { 1.0f,1.0f,1.0f };
     cam = new camera(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     while (!glfwWindowShouldClose(window))
     {
@@ -237,6 +247,8 @@ int main(){
         // Generate samples and plot them
         const char* items[] = { "Ambiental", "Lambert", "Phong" };
         static const char* current_item = NULL;
+        const char* options[] = { "Only Object", "Mix", "Only Scene" };
+        static const char* current_option = NULL;
 
         if (ImGui::BeginCombo("Light Type", current_item)) // The second parameter is the label previewed before opening the combo.
         {
@@ -273,30 +285,59 @@ int main(){
             }
             ImGui::EndCombo();
         }
+        if (ImGui::BeginCombo("Mix Option", current_option)) // The second parameter is the label previewed before opening the combo.
+        {
+            for (int n = 0; n < IM_ARRAYSIZE(options); n++)
+            {
+                bool is_selected = (current_option == options[n]); // You can store your selection however you want, outside or inside your objects
+                if (ImGui::Selectable(options[n], is_selected))
+                    current_option = options[n];
+                if (current_option == options[n])
+                {
+                    option = n;
+                }
+                if (is_selected)
+                    ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+
+            }
+            ImGui::EndCombo();
+        }
         if (ambient)
         {
-            ImGui::ColorEdit3("Light Color", lightColor);
-            glUniform3f(lightColorLoc, lightColor[0], lightColor[1], lightColor[2]);
-            glUniform1i(ambientLoc, ambient);
-            glUniform1i(lambertLoc, lambert);
-            glUniform1i(phongLoc, phong);
+            
+            if (option!=0)
+            {
+                ImGui::ColorEdit3("Ambient Color", ambientColor);
+                glUniform3f(ambientColorLoc, ambientColor[0], ambientColor[1], ambientColor[2]);
+            }
         }
         if (lambert)
         {
-            ImGui::ColorEdit3("Light Color", lightColor);
-            glUniform3f(lightColorLoc, lightColor[0], lightColor[1], lightColor[2]);
-            glUniform1i(lambertLoc, lambert);
-            glUniform1i(ambientLoc, ambient);
-            glUniform1i(phongLoc, phong);
+            if (option != 0)
+            {
+                ImGui::ColorEdit3("Ambient Color", ambientColor);
+                glUniform3f(ambientColorLoc, ambientColor[0], ambientColor[1], ambientColor[2]);
+                ImGui::ColorEdit3("Difuse Color", lambertColor);
+                glUniform3f(lambertColorLoc, lambertColor[0], lambertColor[1], lambertColor[2]);
+            }
         }
         if (phong)
         {
-            ImGui::ColorEdit3("Light Color", lightColor);
-            glUniform3f(lightColorLoc, lightColor[0], lightColor[1], lightColor[2]);
-            glUniform1i(lambertLoc, lambert);
-            glUniform1i(ambientLoc, ambient);
-            glUniform1i(phongLoc, phong);
+            if (option != 0)
+            {
+                ImGui::ColorEdit3("Ambient Color", ambientColor);
+                glUniform3f(ambientColorLoc, ambientColor[0], ambientColor[1], ambientColor[2]);
+                ImGui::ColorEdit3("Difuse Color", lambertColor);
+                glUniform3f(lambertColorLoc, lambertColor[0], lambertColor[1], lambertColor[2]);
+                ImGui::ColorEdit3("Specular Color", phongColor);
+                glUniform3f(phongColorLoc, phongColor[0], phongColor[1], phongColor[2]);
+            }
+            
         }
+        glUniform1i(optionLoc, option);
+        glUniform1i(lambertLoc, lambert);
+        glUniform1i(ambientLoc, ambient);
+        glUniform1i(phongLoc, phong);
         
         ImGui::End();
         // Create camera transformations

@@ -79,6 +79,7 @@ class obj
         {
             mat material;
             vector<int> vertex;
+            vector<int> texture;
             glm::vec3 normal;
         };
 
@@ -88,10 +89,12 @@ class obj
         };
 
         struct mesh {
+            string nombre;
             subObj* meshs;
             //variables para dibujar objetos
             vector <GLfloat> obj_data;
             mat material;
+            vector <face> vector_faces;
         };
 
         void draw(Shader basic_shader);
@@ -115,7 +118,6 @@ class obj
         vector <glm::vec3> temp_vertices;
         vector <glm::vec3> temp_normals;
         vector <glm::vec2> temp_textures;
-        vector <face> vector_faces;
         vector <mat> vector_materials;
 
         
@@ -145,7 +147,7 @@ class obj
 
         glm::vec3 getVertex(string temp);
 
-        void setVertexNormal(face temp, int i);
+        void setVertexNormal(face temp, int i, int v);
 };
 
 inline obj::obj(string fileName)
@@ -192,18 +194,22 @@ inline obj::obj(string fileName)
     loadObj(fileName);
     if (temp_normals.empty())
     {
-        for (int i = 0; i < vector_faces.size(); i++)
+        for (int y = 0; y < vector_mesh.size(); y++)
         {
-            setVertexNormal(vector_faces[i], 0);
-            setVertexNormal(vector_faces[i], 1);
-            setVertexNormal(vector_faces[i], 2);
-            if (vector_faces[i].vertex.size() > 3)
+            for (int i = 0; i < vector_mesh[y].vector_faces.size(); i++)
             {
-                setVertexNormal(vector_faces[i], 0);
-                setVertexNormal(vector_faces[i], 2);
-                setVertexNormal(vector_faces[i], 3);
+                setVertexNormal(vector_mesh[y].vector_faces[i], 0,y);
+                setVertexNormal(vector_mesh[y].vector_faces[i], 1,y);
+                setVertexNormal(vector_mesh[y].vector_faces[i], 2, y);
+                if (vector_mesh[y].vector_faces[i].vertex.size() > 3)
+                {
+                    setVertexNormal(vector_mesh[y].vector_faces[i], 0, y);
+                    setVertexNormal(vector_mesh[y].vector_faces[i], 2, y);
+                    setVertexNormal(vector_mesh[y].vector_faces[i], 3, y);
+                }
             }
         }
+        
     }
     float dx, dy, dz, df;
     dx = abs(max.x - min.x);
@@ -256,7 +262,7 @@ inline obj::obj(string fileName)
     // 2. copy our vertices array in a buffer for OpenGL to use
     glGenBuffers(1, &boundingVBO);
     glBindBuffer(GL_ARRAY_BUFFER, boundingVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 72, bounding, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat*) * 72, bounding, GL_STATIC_DRAW);
     // 3. then set our vertex attributes pointers
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
     glEnableVertexAttribArray(0);
@@ -280,7 +286,9 @@ inline obj::obj(string fileName)
             image.append("\\");
         }
         image.append(vector_mesh[i].material.map_ka);
-        vector_mesh[i].meshs = new subObj(vector_mesh[i].obj_data.data(), sizeof(GLfloat*) * vector_mesh[i].obj_data.size(), image);
+        vector_materials.empty()? 
+            vector_mesh[i].meshs = new subObj(vector_mesh[i].obj_data.data(), sizeof(GLfloat*) * vector_mesh[i].obj_data.size(), "") : 
+            vector_mesh[i].meshs = new subObj(vector_mesh[i].obj_data.data(), sizeof(GLfloat*) * vector_mesh[i].obj_data.size(), image);
         image.clear();
     }
 
@@ -310,6 +318,7 @@ inline void obj::draw(Shader basic_shader)
     GLint specularColorLoc = glGetUniformLocation(basic_shader.Program, "Ks");
     GLint shininessLoc = glGetUniformLocation(basic_shader.Program, "shininess");
     GLint modelLoc = glGetUniformLocation(basic_shader.Program, "model");
+    GLint boundingLoc = glGetUniformLocation(basic_shader.Program, "bounding");
 
     
     model =
@@ -318,7 +327,7 @@ inline void obj::draw(Shader basic_shader)
         glm::rotate(glm::mat4(1.0f), x_angle, glm::vec3(1.0f, 0.0f, 0.0f)) *
         glm::scale(glm::mat4(1.0f), scale_vector * scale);
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-    
+    glUniform1i(boundingLoc, false);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     for (int i = 0; i < vector_mesh.size(); i++)
     {
@@ -341,8 +350,9 @@ inline void obj::draw(Shader basic_shader)
     if (selected)
     {
         glUniform3f(difuseColorLoc, bounding_color[0], bounding_color[1], bounding_color[2]);
+        glUniform1i(boundingLoc, true);
         glBindVertexArray(boundingVAO);
-        glDrawArrays(GL_LINES, 0, 72);
+        glDrawArrays(GL_LINES, 0, sizeof(GLfloat*) * 6);
     }
 
 }
@@ -374,11 +384,9 @@ inline void obj::loadObj(string filename)
     baseNormal tempCalcNormal;
     mesh tempMesh;
 
-    int vertice;
+    int vertice,texture;
     while (getline(MyReadFile, myText)) {
         if (myText.size() < 2)
-            continue;
-        if (myText[0] != 'f' && myText[0] != 'v' && myText[1] != 'n' && myText[0] != 'u')
             continue;
         found = myText.find("  ");
         if (found != string::npos)
@@ -395,9 +403,25 @@ inline void obj::loadObj(string filename)
                 if (strcmp(vector_materials[i].name.data(), temp[1].data()) != 0) continue;
                 tempMaterial = vector_materials[i];
             }
-            tempMesh.material = tempMaterial;
-            vector_mesh.push_back(tempMesh);
-
+            vector_mesh.back().material=tempMaterial;
+        }
+        else if (strcmp(temp[0].data(), "o") == 0 || strcmp(temp[0].data(), "g") == 0)
+        {
+            if (vector_mesh.empty())
+            {
+                tempMesh.nombre = temp[1];
+                vector_mesh.push_back(tempMesh);
+            }
+            else
+            {
+                if (strcmp(vector_mesh.back().nombre.data(), temp[1].data()) != 0)
+                {
+                    tempMesh.nombre = temp[1];
+                    vector_mesh.push_back(tempMesh);
+                }
+            }
+            
+            
         }
         else if (strcmp(temp[0].data(), "v") == 0)
         {
@@ -456,11 +480,20 @@ inline void obj::loadObj(string filename)
                     nt = nt + n;
                     calcNormal[vertice].adjacents++;
                     calcNormal[vertice].normal = nt / calcNormal[vertice].adjacents;
+                    if (!temp_textures.empty())
+                    {
+                        aux = split(temp[i], '/');
+                        texture = stoi(aux[1]);
+                        texture < 0 ? texture = temp_vertices.size() + texture : texture--;
+                        tempFace.texture.push_back(texture);
+                    }
                 }
                 tempFace.normal = n;
-                if (!vector_materials.empty())tempFace.material = tempMaterial;
-                vector_faces.push_back(tempFace);
-
+                if (!vector_materials.empty()) { 
+                    tempFace.material = tempMaterial; 
+                    vector_mesh.back().material = tempMaterial;
+                }
+                vector_mesh.back().vector_faces.push_back(tempFace);
             }
         }
     }
@@ -486,7 +519,8 @@ inline void obj::loadVertex(string const& temp)
 
     if (temp_textures.empty())
     {
-        cout << "sin texturas";
+        vector_mesh.back().obj_data.push_back(-0.1f);
+        vector_mesh.back().obj_data.push_back(-0.1f);
     }
     else {
         textures = stoi(aux[1]);
@@ -522,15 +556,30 @@ inline glm::vec3 obj::getVertex(string temp)
     return { temp_vertices[vertice] };
 }
 
-inline void obj::setVertexNormal(face temp, int i) {
-    vector_mesh[i].obj_data.push_back(temp_vertices[temp.vertex[i]].x);
-    vector_mesh[i].obj_data.push_back(temp_vertices[temp.vertex[i]].y);
-    vector_mesh[i].obj_data.push_back(temp_vertices[temp.vertex[i]].z);
+inline void obj::setVertexNormal(face temp, int i,int v) {
+    vector_mesh[v].obj_data.push_back(temp_vertices[temp.vertex[i]].x);
+    vector_mesh[v].obj_data.push_back(temp_vertices[temp.vertex[i]].y);
+    vector_mesh[v].obj_data.push_back(temp_vertices[temp.vertex[i]].z);
 
-    vector_mesh[i].obj_data.push_back(calcNormal[temp.vertex[i]].normal.x);
-    vector_mesh[i].obj_data.push_back(calcNormal[temp.vertex[i]].normal.y);
-    vector_mesh[i].obj_data.push_back(calcNormal[temp.vertex[i]].normal.z);
+    vector_mesh[v].obj_data.push_back(calcNormal[temp.vertex[i]].normal.x);
+    vector_mesh[v].obj_data.push_back(calcNormal[temp.vertex[i]].normal.y);
+    vector_mesh[v].obj_data.push_back(calcNormal[temp.vertex[i]].normal.z);
 
+    if (vector_materials.empty())
+    {
+        vector_mesh[v].obj_data.push_back(-0.1f);
+        vector_mesh[v].obj_data.push_back(-0.1f);
+    }
+    else
+    {
+        if (!temp_textures.empty())
+        {
+            vector_mesh[v].obj_data.push_back(temp_textures[temp.texture[i]].x);
+            vector_mesh[v].obj_data.push_back(temp_textures[temp.texture[i]].y);
+        }
+        
+    }
+    
 }
 
 inline void obj::rotateObj(float x, float y)
