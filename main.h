@@ -1,30 +1,30 @@
 #pragma once
-#include <iostream>
-#include <fstream>
-#include <cmath>
-#include <vector>
-#include <string>
-// pueden utilizar este después
-// #include <GL/glad.h>
-#include <GL/glew.h>
-
-// pueden utilizar este después
-// #include <GL/glad.h>
-
-// GLFW
-#include <glfw3.h>
-
-// GLM Mathematics
-#define GLM_FORCE_RADIANS// force everything in radian
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
-// Other includes
-#include "Shader.h"
+//#include <iostream>
+//#include <fstream>
+//#include <cmath>
+//#include <vector>
+//#include <string>
+//// pueden utilizar este después
+//// #include <GL/glad.h>
+//#include <GL/glew.h>
+//
+//// pueden utilizar este después
+//// #include <GL/glad.h>
+//
+//// GLFW
+//#include <glfw3.h>
+//
+//// GLM Mathematics
+//#define GLM_FORCE_RADIANS// force everything in radian
+//#include <glm/glm.hpp>
+//#include <glm/gtc/matrix_transform.hpp>
+//#include <glm/gtc/type_ptr.hpp>
+//
+//// Other includes
+//#include "Shader.h"
 
 #include <tinyfiledialogs/tinyfiledialogs.h>
-using namespace std;
+//using namespace std;
 
 #include <obj.h>
 #include "imgui.h"

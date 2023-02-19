@@ -170,6 +170,8 @@
     <ClCompile Include="imgui\imgui_tables.cpp" />
     <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="obj.cpp" />
+    <ClCompile Include="subobj.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="color_shader.frag" />
