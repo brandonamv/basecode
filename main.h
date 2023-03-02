@@ -37,7 +37,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void mouseClick(GLFWwindow* window, int button, int action, int mods);
 void do_movement(GLfloat delta);
-string openFile();
+std::string openFile();
 
 // Window dimensions
 const GLuint WIDTH = 1400, HEIGHT = 1000;
@@ -63,10 +63,9 @@ float backgroundColor[4] = {0.0f, 1.0f, 1.0f,1.0f};
 
 
 //obj atributes
-vector<obj*> objects;
+std::vector<obj*> objects;
 obj* actual=nullptr;
-
-
+const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 
 bool firstMouse = false;
 bool rotation=false, moving=false;

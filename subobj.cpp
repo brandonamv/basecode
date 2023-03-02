@@ -1,7 +1,7 @@
 #include "subobj.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-
+using namespace std;
 subObj::subObj(GLfloat* data, int size, string image) {
     this->size = size / sizeof(data);
     // First, set the container's VAO (and VBO)

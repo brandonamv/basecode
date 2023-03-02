@@ -1,7 +1,7 @@
 #include "obj.h"
+#include <glm/gtx/quaternion.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
-
-#include <glm/gtx/transform.hpp>
+using namespace std;
 obj::obj(string fileName)
 {
     string aux = fileName;
@@ -13,7 +13,7 @@ obj::obj(string fileName)
     if (MyReadFile.is_open())
     {
         vector<string> temp;
-        mat tempMaterial;
+        material tempMaterial;
         while (getline(MyReadFile, aux)) {
             if (aux.size() < 1)continue;
             temp = split(aux, ' ');
@@ -53,25 +53,6 @@ obj::obj(string fileName)
         cout << "No se encontro el archivo .mtl";
     }
     loadObj(fileName);
-    if (temp_normals.empty())
-    {
-        for (int y = 0; y < vector_mesh.size(); y++)
-        {
-            for (int i = 0; i < vector_mesh[y].vector_faces.size(); i++)
-            {
-                setVertexNormal(vector_mesh[y].vector_faces[i], 0, y);
-                setVertexNormal(vector_mesh[y].vector_faces[i], 1, y);
-                setVertexNormal(vector_mesh[y].vector_faces[i], 2, y);
-                if (vector_mesh[y].vector_faces[i].vertex.size() > 3)
-                {
-                    setVertexNormal(vector_mesh[y].vector_faces[i], 0, y);
-                    setVertexNormal(vector_mesh[y].vector_faces[i], 2, y);
-                    setVertexNormal(vector_mesh[y].vector_faces[i], 3, y);
-                }
-            }
-        }
-
-    }
     float dx, dy, dz, df;
     dx = abs(max.x - min.x);
     dy = abs(max.y - min.y);
@@ -172,7 +153,7 @@ obj::obj(string fileName)
             image.append(base[i]);
             image.append("\\");
         }
-        image.append(vector_mesh[i].material.map_ka);
+        image.append(vector_mesh[i].mat.map_ka);
         vector_materials.empty() ?
             vector_mesh[i].meshs = new subObj(vector_mesh[i].obj_data.data(), sizeof(GLfloat*) * vector_mesh[i].obj_data.size(), "") :
             vector_mesh[i].meshs = new subObj(vector_mesh[i].obj_data.data(), sizeof(GLfloat*) * vector_mesh[i].obj_data.size(), image);
@@ -198,8 +179,6 @@ obj::~obj()
 void obj::draw(Shader basic_shader)
 {
     // Use cooresponding shader when setting uniforms/drawing objects
-    /*uniform vec4 Ka, Kd, Ks;
-    uniform float alfa, shininess;*/
     GLint ambientColorLoc = glGetUniformLocation(basic_shader.Program, "Ka");
     GLint difuseColorLoc = glGetUniformLocation(basic_shader.Program, "Kd");
     GLint specularColorLoc = glGetUniformLocation(basic_shader.Program, "Ks");
@@ -207,7 +186,7 @@ void obj::draw(Shader basic_shader)
     GLint modelLoc = glGetUniformLocation(basic_shader.Program, "model");
     GLint boundingLoc = glGetUniformLocation(basic_shader.Program, "bounding");
     GLint texturizedLoc = glGetUniformLocation(basic_shader.Program, "texturized");
-    glm::mat4 ident = glm::mat4(1.0f);
+
     glm::mat4 center = glm::translate(ident, center_vector);
     glm::mat4 scaling = glm::scale(ident, scale_vector * scale);
     glm::mat4 traslation = glm::translate(ident, tras_vector);
@@ -218,10 +197,10 @@ void obj::draw(Shader basic_shader)
     for (int i = 0; i < vector_mesh.size(); i++)
     {
 
-        glUniform3f(ambientColorLoc, vector_mesh[i].material.ka[0], vector_mesh[i].material.ka[1], vector_mesh[i].material.ka[2]);
-        glUniform3f(difuseColorLoc, vector_mesh[i].material.kd[0], vector_mesh[i].material.kd[1], vector_mesh[i].material.kd[2]);
-        glUniform3f(specularColorLoc, vector_mesh[i].material.ks[0], vector_mesh[i].material.ks[1], vector_mesh[i].material.ks[2]);
-        glUniform1f(shininessLoc, vector_mesh[i].material.ns);
+        glUniform3f(ambientColorLoc, vector_mesh[i].mat.ka[0], vector_mesh[i].mat.ka[1], vector_mesh[i].mat.ka[2]);
+        glUniform3f(difuseColorLoc, vector_mesh[i].mat.kd[0], vector_mesh[i].mat.kd[1], vector_mesh[i].mat.kd[2]);
+        glUniform3f(specularColorLoc, vector_mesh[i].mat.ks[0], vector_mesh[i].mat.ks[1], vector_mesh[i].mat.ks[2]);
+        glUniform1f(shininessLoc, vector_mesh[i].mat.ns);
 
         glUniform1i(texturizedLoc, vector_mesh[i].meshs->getTexture());
         vector_mesh[i].meshs->draw();
@@ -246,169 +225,311 @@ bool obj::onClick(int x, int y)
 
 void obj::loadObj(string filename)
 {
-    
-    string myText;
-    ifstream MyReadFile(filename);
-    vector<string> temp;
-    vector<string> aux;
+    FILE* file;
+    char linea[128] = {0};
 
-    size_t found;
-    glm::vec3 vertex;
-    glm::vec3 normal;
-    glm::vec2 textura;
-    glm::vec3 a, b, c, d, v1, v2, n, nt;
+    if (fopen_s(&file, filename.data(), "r") != 0)
+    {
+        printf("Error al cargar el objeto!\n");
+        return;
+    }
 
-    face tempFace;
-    mat tempMaterial;
-    baseNormal tempCalcNormal;
-    mesh tempMesh;
+    file_path = filename;
 
-    int vertice, texture;
-    while (getline(MyReadFile, myText)) {
-        if (myText.size() < 2)
-            continue;
-        found = myText.find("  ");
-        if (found != string::npos)
-            myText.erase(myText.begin() + found);
-        if (myText[myText.size() - 1] == ' ')
-            myText.erase(myText.begin() + myText.size() - 1);
-        temp = split(myText, ' ');
-        if (strcmp(temp[0].data(), "usemtl") == 0)
+    vector<glm::vec3> auxVertices;
+    vector<glm::vec2> auxTextures;
+    vector<glm::vec3> auxNormals;
+
+    vector<baseNormal> normal_vertex;
+
+    while (1)
+    {
+        if (fscanf(file, "%127s", &linea) == EOF)
+            break;
+
+        if (strcmp(linea, "v") == 0) {
+            glm::vec3 vertice;
+            fscanf_s(file, "%f %f %f\n", &vertice.x, &vertice.y, &vertice.z);
+            auxVertices.push_back(vertice);
+            normal_vertex.push_back({ vertice,0.0f });
+            if (vertice.x > max.x)
+                max.x = vertice.x;
+            if (vertice.x < min.x)
+                min.x = vertice.x;
+            if (vertice.y > max.y)
+                max.y = vertice.y;
+            if (vertice.y < min.y)
+                min.y = vertice.y;
+            if (vertice.z > max.z)
+                max.z = vertice.z;
+            if (vertice.z < min.z)
+                min.z = vertice.z;
+        } 
+        else if (strcmp(linea, "o") == 0){
+            mesh temp_mesh;
+            char name[128] = { 0 };
+            fscanf(file, "%127s", &name);
+            temp_mesh.nombre = name;
+            vector_mesh.push_back(temp_mesh);
+
+        }
+        else if (strcmp(linea, "usemtl") == 0)
         {
+            string name_material;
+            char name[128] = { 0 };
+            fscanf(file, "%127s", &name);
+            name_material = name;
             if (vector_materials.empty()) continue;
-            tempMaterial.name = temp[1];
             for (int i = 0; i < vector_materials.size(); i++)
             {
-                if (strcmp(vector_materials[i].name.data(), temp[1].data()) != 0) continue;
-                tempMaterial = vector_materials[i];
+                if (strcmp(vector_materials[i].name.data(), name_material.data()) != 0) continue;
+                vector_mesh.back().mat = vector_materials[i];
             }
-            vector_mesh.back().material = tempMaterial;
+            
         }
-        else if (strcmp(temp[0].data(), "o") == 0 || strcmp(temp[0].data(), "g") == 0)
-        {
-            if (vector_mesh.empty())
+
+
+        else if (strcmp(linea, "vt") == 0) {
+            glm::vec2 texture;
+            fscanf_s(file, "%f %f\n", &texture.x, &texture.y);
+            auxTextures.push_back(texture);
+        }
+        else if (strcmp(linea, "vn") == 0) {
+            glm::vec3 normals;
+            fscanf_s(file, "%f %f %f\n", &normals.x, &normals.y, &normals.z);
+            auxNormals.push_back(normals);
+        }
+        else if (strcmp(linea, "f") == 0) {
+            int vertexIndex[4]{ 0,0,0,0 }, textureIndex[4]{ 0,0,0,0 }, normalIndex[4]{ 0,0,0, 0 };
+            int matches;
+            if (auxNormals.empty())
             {
-                tempMesh.nombre = temp[1];
-                vector_mesh.push_back(tempMesh);
+                if (auxTextures.empty()) {
+                    matches = fscanf_s(file, "%d %d %d %d\n", &vertexIndex[0], &vertexIndex[1], &vertexIndex[2], &vertexIndex[3]);
+
+                }
+                else {
+                    matches = fscanf_s(file, "%d/%d %d/%d %d/%d %d/%d\n", &vertexIndex[0], &textureIndex[0], &vertexIndex[1], &textureIndex[1], &vertexIndex[2], &textureIndex[2], &vertexIndex[3], &textureIndex[3]);
+
+                }
             }
             else
             {
-                if (strcmp(vector_mesh.back().nombre.data(), temp[1].data()) != 0)
+                if (auxTextures.empty()) {
+                    matches = fscanf_s(file, "%d//%d %d//%d %d//%d %d//%d\n", &vertexIndex[0], &normalIndex[0], &vertexIndex[1], &normalIndex[1], &vertexIndex[2], &normalIndex[2], &vertexIndex[3], &normalIndex[3]);
+
+                }
+                else
                 {
-                    tempMesh.nombre = temp[1];
-                    vector_mesh.push_back(tempMesh);
+                    matches = fscanf_s(file, "%d/%d/%d %d/%d/%d %d/%d/%d %d/%d/%d\n", &vertexIndex[0], &textureIndex[0], &normalIndex[0], &vertexIndex[1], &textureIndex[1], &normalIndex[1], &vertexIndex[2], &textureIndex[2], &normalIndex[2], &vertexIndex[3], &textureIndex[3], &normalIndex[3]);
+
                 }
             }
-
-
-        }
-        else if (strcmp(temp[0].data(), "v") == 0)
-        {
-            vertex.x = stof(temp[1]);
-            vertex.y = stof(temp[2]);
-            vertex.z = stof(temp[3]);
-            if (vertex.x < min.x)min.x = vertex.x;
-            if (vertex.x > max.x)max.x = vertex.x;
-            if (vertex.y < min.y)min.y = vertex.y;
-            if (vertex.y > max.y)max.y = vertex.y;
-            if (vertex.z < min.z)min.z = vertex.z;
-            if (vertex.z > max.z)max.z = vertex.z;
-            temp_vertices.push_back(vertex);
-            calcNormal.push_back(tempCalcNormal);
-
-        }
-        else if (strcmp(temp[0].data(), "vn") == 0)
-        {
-            normal.x = stof(temp[1]);
-            normal.y = stof(temp[2]);
-            normal.z = stof(temp[3]);
-            temp_normals.push_back(normal);
-        }
-        else if (strcmp(temp[0].data(), "vt") == 0)
-        {
-            textura.x = stof(temp[1]);
-            textura.y = stof(temp[2]);
-            temp_textures.push_back(textura);
-        }
-        else if (strcmp(temp[0].data(), "f") == 0)
-        {
-            a = getVertex(temp[1]);
-            b = getVertex(temp[2]);
-            c = getVertex(temp[3]);
-            n = glm::cross((a - b), (a - c));
-            if (!temp_normals.empty())
+            if (vertexIndex[0] < 0)
             {
-                loadVertex(temp[1]);
-                loadVertex(temp[2]);
-                loadVertex(temp[3]);
-                if (temp.size() < 5)continue;
-                loadVertex(temp[1]);
-                loadVertex(temp[3]);
-                loadVertex(temp[4]);
+                vertexIndex[0] = auxVertices.size() + vertexIndex[0];
+                vertexIndex[1] = auxVertices.size() + vertexIndex[1];
+                vertexIndex[2] = auxVertices.size() + vertexIndex[2];
+                if (vertexIndex[3] != 0)
+                    vertexIndex[3] = auxVertices.size() + vertexIndex[3];
             }
             else
             {
-                tempFace.vertex.clear();
-                for (int i = 1; i < temp.size(); i++)
+                vertexIndex[0]--;
+                vertexIndex[1]--;
+                vertexIndex[2]--;
+                if (vertexIndex[3] != 0)
+                    vertexIndex[3]--;
+            }
+
+            if (normalIndex[0] < 0)
+            {
+                normalIndex[0] = auxNormals.size() + normalIndex[0];
+                normalIndex[1] = auxNormals.size() + normalIndex[1];
+                normalIndex[2] = auxNormals.size() + normalIndex[2];
+                if (normalIndex[3] != 0)
+                    normalIndex[3] = auxNormals.size() + normalIndex[3];
+            }
+            else
+            {
+                normalIndex[0]--;
+                normalIndex[1]--;
+                normalIndex[2]--;
+                if (normalIndex[3] != 0)
+                    normalIndex[3]--;
+            }
+
+            if (textureIndex[0] < 0)
+            {
+                textureIndex[0] = auxNormals.size() + textureIndex[0];
+                textureIndex[1] = auxNormals.size() + textureIndex[1];
+                textureIndex[2] = auxNormals.size() + textureIndex[2];
+                if (textureIndex[3] != 0)
+                    textureIndex[3] = auxNormals.size() + textureIndex[3];
+            }
+            else
+            {
+                textureIndex[0]--;
+                textureIndex[1]--;
+                textureIndex[2]--;
+                if (textureIndex[3] != 0)
+                    textureIndex[3]--;
+            }
+            if (!auxNormals.empty())
+            {
+                vector_mesh.back().obj_data.push_back(auxVertices[vertexIndex[0]].x);
+                vector_mesh.back().obj_data.push_back(auxVertices[vertexIndex[0]].y);
+                vector_mesh.back().obj_data.push_back(auxVertices[vertexIndex[0]].z);
+                vector_mesh.back().obj_data.push_back(auxNormals[normalIndex[0]].x);
+                vector_mesh.back().obj_data.push_back(auxNormals[normalIndex[0]].y);
+                vector_mesh.back().obj_data.push_back(auxNormals[normalIndex[0]].z);
+                vector_mesh.back().obj_data.push_back(auxTextures[textureIndex[0]].x);
+                vector_mesh.back().obj_data.push_back(auxTextures[textureIndex[0]].y);
+
+                vector_mesh.back().obj_data.push_back(auxVertices[vertexIndex[1]].x);
+                vector_mesh.back().obj_data.push_back(auxVertices[vertexIndex[1]].y);
+                vector_mesh.back().obj_data.push_back(auxVertices[vertexIndex[1]].z);
+                vector_mesh.back().obj_data.push_back(auxNormals[normalIndex[1]].x);
+                vector_mesh.back().obj_data.push_back(auxNormals[normalIndex[1]].y);
+                vector_mesh.back().obj_data.push_back(auxNormals[normalIndex[1]].z);
+                vector_mesh.back().obj_data.push_back(auxTextures[textureIndex[1]].x);
+                vector_mesh.back().obj_data.push_back(auxTextures[textureIndex[1]].y);
+
+                vector_mesh.back().obj_data.push_back(auxVertices[vertexIndex[2]].x);
+                vector_mesh.back().obj_data.push_back(auxVertices[vertexIndex[2]].y);
+                vector_mesh.back().obj_data.push_back(auxVertices[vertexIndex[2]].z);
+                vector_mesh.back().obj_data.push_back(auxNormals[normalIndex[2]].x);
+                vector_mesh.back().obj_data.push_back(auxNormals[normalIndex[2]].y);
+                vector_mesh.back().obj_data.push_back(auxNormals[normalIndex[2]].z);
+                vector_mesh.back().obj_data.push_back(auxTextures[textureIndex[2]].x);
+                vector_mesh.back().obj_data.push_back(auxTextures[textureIndex[2]].y);
+                if (matches % 4 == 0)
                 {
-                    aux = split(temp[i], '/');
-                    vertice = stoi(aux[0]);
-                    vertice < 0 ? vertice = temp_vertices.size() + vertice : vertice--;
-                    tempFace.vertex.push_back(vertice);
-                    nt = calcNormal[vertice].normal * calcNormal[vertice].adjacents;
-                    nt = nt + n;
-                    calcNormal[vertice].adjacents++;
-                    calcNormal[vertice].normal = nt / calcNormal[vertice].adjacents;
-                    if (!temp_textures.empty())
-                    {
-                        aux = split(temp[i], '/');
-                        texture = stoi(aux[1]);
-                        texture < 0 ? texture = temp_vertices.size() + texture : texture--;
-                        tempFace.texture.push_back(texture);
-                    }
+                    vector_mesh.back().obj_data.push_back(auxVertices[vertexIndex[0]].x);
+                    vector_mesh.back().obj_data.push_back(auxVertices[vertexIndex[0]].y);
+                    vector_mesh.back().obj_data.push_back(auxVertices[vertexIndex[0]].z);
+                    vector_mesh.back().obj_data.push_back(auxNormals[normalIndex[0]].x);
+                    vector_mesh.back().obj_data.push_back(auxNormals[normalIndex[0]].y);
+                    vector_mesh.back().obj_data.push_back(auxNormals[normalIndex[0]].z);
+                    vector_mesh.back().obj_data.push_back(auxTextures[textureIndex[0]].x);
+                    vector_mesh.back().obj_data.push_back(auxTextures[textureIndex[0]].y);
+
+                    vector_mesh.back().obj_data.push_back(auxVertices[vertexIndex[2]].x);
+                    vector_mesh.back().obj_data.push_back(auxVertices[vertexIndex[2]].y);
+                    vector_mesh.back().obj_data.push_back(auxVertices[vertexIndex[2]].z);
+                    vector_mesh.back().obj_data.push_back(auxNormals[normalIndex[2]].x);
+                    vector_mesh.back().obj_data.push_back(auxNormals[normalIndex[2]].y);
+                    vector_mesh.back().obj_data.push_back(auxNormals[normalIndex[2]].z);
+                    vector_mesh.back().obj_data.push_back(auxTextures[textureIndex[2]].x);
+                    vector_mesh.back().obj_data.push_back(auxTextures[textureIndex[2]].y);
+
+                    vector_mesh.back().obj_data.push_back(auxVertices[vertexIndex[3]].x);
+                    vector_mesh.back().obj_data.push_back(auxVertices[vertexIndex[3]].y);
+                    vector_mesh.back().obj_data.push_back(auxVertices[vertexIndex[3]].z);
+                    vector_mesh.back().obj_data.push_back(auxNormals[normalIndex[3]].x);
+                    vector_mesh.back().obj_data.push_back(auxNormals[normalIndex[3]].y);
+                    vector_mesh.back().obj_data.push_back(auxNormals[normalIndex[3]].z);
+                    vector_mesh.back().obj_data.push_back(auxTextures[textureIndex[3]].x);
+                    vector_mesh.back().obj_data.push_back(auxTextures[textureIndex[3]].y);
                 }
-                tempFace.normal = n;
-                if (!vector_materials.empty()) {
-                    tempFace.material = tempMaterial;
-                    vector_mesh.back().material = tempMaterial;
+            }
+            else
+            {
+                glm::vec3 temp;
+                glm::vec3 calc_normal = glm::cross((auxVertices[vertexIndex[0]] - auxVertices[vertexIndex[1]]), (auxVertices[vertexIndex[0]] - auxVertices[vertexIndex[2]]));
+                temp = normal_vertex[vertexIndex[0]].normal * normal_vertex[vertexIndex[0]].adjacents;
+                temp += calc_normal;
+                normal_vertex[vertexIndex[0]].adjacents++;
+                normal_vertex[vertexIndex[0]].normal = temp / normal_vertex[vertexIndex[0]].adjacents;
+                temp = normal_vertex[vertexIndex[1]].normal * normal_vertex[vertexIndex[1]].adjacents;
+                temp += calc_normal;
+                normal_vertex[vertexIndex[1]].adjacents++;
+                normal_vertex[vertexIndex[1]].normal = temp / normal_vertex[vertexIndex[1]].adjacents;
+                temp = normal_vertex[vertexIndex[2]].normal * normal_vertex[vertexIndex[2]].adjacents;
+                temp += calc_normal;
+                normal_vertex[vertexIndex[2]].adjacents++;
+                normal_vertex[vertexIndex[2]].normal = temp / normal_vertex[vertexIndex[2]].adjacents;
+                if (matches % 4 == 0)
+                {
+                    calc_normal = glm::cross((auxVertices[vertexIndex[3]] - auxVertices[vertexIndex[1]]), (auxVertices[vertexIndex[3]] - auxVertices[vertexIndex[2]]));
+                    temp = normal_vertex[vertexIndex[3]].normal * normal_vertex[vertexIndex[3]].adjacents;
+                    temp += calc_normal;
+                    normal_vertex[vertexIndex[3]].adjacents++;
+                    normal_vertex[vertexIndex[3]].normal = temp / normal_vertex[vertexIndex[3]].adjacents;
+                    vector_mesh.back().vector_faces.push_back({ vertexIndex[0],vertexIndex[1],vertexIndex[2], vertexIndex[3]
+                        ,textureIndex[0],textureIndex[1],textureIndex[2],textureIndex[3]});
                 }
-                vector_mesh.back().vector_faces.push_back(tempFace);
+                else
+                {
+                    vector_mesh.back().vector_faces.push_back({ vertexIndex[0],vertexIndex[1],vertexIndex[2], -1
+                        ,textureIndex[0],textureIndex[1],textureIndex[2],-1 });
+                }
+
             }
         }
     }
-}
-
-void obj::loadVertex(string const& temp)
-{
-    vector<string> aux;
-    int vertice, normal, textures;
-    aux = split(temp, '/');
-    vertice = stoi(aux[0]);
-    normal = stoi(aux[2]);
-    vertice < 0 ? vertice = temp_vertices.size() + vertice : vertice--;
-    normal < 0 ? normal = temp_normals.size() + normal : normal--;
-    vector_mesh.back().obj_data.push_back(temp_vertices[vertice].x);
-    vector_mesh.back().obj_data.push_back(temp_vertices[vertice].y);
-    vector_mesh.back().obj_data.push_back(temp_vertices[vertice].z);
-
-    vector_mesh.back().obj_data.push_back(temp_normals[normal].x);
-    vector_mesh.back().obj_data.push_back(temp_normals[normal].y);
-    vector_mesh.back().obj_data.push_back(temp_normals[normal].z);
-
-
-    if (temp_textures.empty())
+    if (auxNormals.empty())
     {
-        vector_mesh.back().obj_data.push_back(-0.1f);
-        vector_mesh.back().obj_data.push_back(-0.1f);
-    }
-    else {
-        textures = stoi(aux[1]);
-        textures < 0 ? textures = temp_normals.size() + textures : textures--;
-        vector_mesh.back().obj_data.push_back(temp_textures[textures].x);
-        vector_mesh.back().obj_data.push_back(temp_textures[textures].y);
-    }
+        for (int i = 0; i < vector_mesh.back().vector_faces.size(); i++)
+        {
+            vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].vertex[0]].x);
+            vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].vertex[0]].y);
+            vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].vertex[0]].z);
+            vector_mesh.back().obj_data.push_back(normal_vertex[vector_mesh.back().vector_faces[i].vertex[0]].normal.x);
+            vector_mesh.back().obj_data.push_back(normal_vertex[vector_mesh.back().vector_faces[i].vertex[0]].normal.y);
+            vector_mesh.back().obj_data.push_back(normal_vertex[vector_mesh.back().vector_faces[i].vertex[0]].normal.z);
+            vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].texture[0]].x);
+            vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].texture[0]].y);
 
+            vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].vertex[1]].x);
+            vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].vertex[1]].y);
+            vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].vertex[1]].z);
+            vector_mesh.back().obj_data.push_back(normal_vertex[vector_mesh.back().vector_faces[i].vertex[1]].normal.x);
+            vector_mesh.back().obj_data.push_back(normal_vertex[vector_mesh.back().vector_faces[i].vertex[1]].normal.y);
+            vector_mesh.back().obj_data.push_back(normal_vertex[vector_mesh.back().vector_faces[i].vertex[1]].normal.z);
+            vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].texture[1]].x);
+            vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].texture[1]].y);
 
+            vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].vertex[2]].x);
+            vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].vertex[2]].y);
+            vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].vertex[2]].z);
+            vector_mesh.back().obj_data.push_back(normal_vertex[vector_mesh.back().vector_faces[i].vertex[2]].normal.x);
+            vector_mesh.back().obj_data.push_back(normal_vertex[vector_mesh.back().vector_faces[i].vertex[2]].normal.y);
+            vector_mesh.back().obj_data.push_back(normal_vertex[vector_mesh.back().vector_faces[i].vertex[2]].normal.z);
+            vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].texture[2]].x);
+            vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].texture[2]].y);
+            if (vector_mesh.back().vector_faces[i].vertex[3] != -1)
+            {
+                vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].vertex[0]].x);
+                vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].vertex[0]].y);
+                vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].vertex[0]].z);
+                vector_mesh.back().obj_data.push_back(normal_vertex[vector_mesh.back().vector_faces[i].vertex[0]].normal.x);
+                vector_mesh.back().obj_data.push_back(normal_vertex[vector_mesh.back().vector_faces[i].vertex[0]].normal.y);
+                vector_mesh.back().obj_data.push_back(normal_vertex[vector_mesh.back().vector_faces[i].vertex[0]].normal.z);
+                vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].texture[0]].x);
+                vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].texture[0]].y);
+
+                vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].vertex[2]].x);
+                vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].vertex[2]].y);
+                vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].vertex[2]].z);
+                vector_mesh.back().obj_data.push_back(normal_vertex[vector_mesh.back().vector_faces[i].vertex[2]].normal.x);
+                vector_mesh.back().obj_data.push_back(normal_vertex[vector_mesh.back().vector_faces[i].vertex[2]].normal.y);
+                vector_mesh.back().obj_data.push_back(normal_vertex[vector_mesh.back().vector_faces[i].vertex[2]].normal.z);
+                vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].texture[2]].x);
+                vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].texture[2]].y);
+
+                vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].vertex[3]].x);
+                vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].vertex[3]].y);
+                vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].vertex[3]].z);
+                vector_mesh.back().obj_data.push_back(normal_vertex[vector_mesh.back().vector_faces[i].vertex[3]].normal.x);
+                vector_mesh.back().obj_data.push_back(normal_vertex[vector_mesh.back().vector_faces[i].vertex[3]].normal.y);
+                vector_mesh.back().obj_data.push_back(normal_vertex[vector_mesh.back().vector_faces[i].vertex[3]].normal.z);
+                vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].texture[3]].x);
+                vector_mesh.back().obj_data.push_back(auxVertices[vector_mesh.back().vector_faces[i].texture[3]].y);
+            }
+        }
+    }
+    
 }
 
 vector<string> obj::split(string const& original, char separator) {
@@ -425,52 +546,14 @@ vector<string> obj::split(string const& original, char separator) {
     return results;
 }
 
-glm::vec3 obj::getVertex(string temp)
-{
-    vector<string> aux;
-    int vertice;
-    aux = split(temp, '/');
-    vertice = stoi(aux[0]);
-    vertice < 0 ? vertice = temp_vertices.size() + vertice : vertice--;
-    return { temp_vertices[vertice] };
-}
-
-void obj::setVertexNormal(face temp, int i, int v) {
-    vector_mesh[v].obj_data.push_back(temp_vertices[temp.vertex[i]].x);
-    vector_mesh[v].obj_data.push_back(temp_vertices[temp.vertex[i]].y);
-    vector_mesh[v].obj_data.push_back(temp_vertices[temp.vertex[i]].z);
-
-    vector_mesh[v].obj_data.push_back(calcNormal[temp.vertex[i]].normal.x);
-    vector_mesh[v].obj_data.push_back(calcNormal[temp.vertex[i]].normal.y);
-    vector_mesh[v].obj_data.push_back(calcNormal[temp.vertex[i]].normal.z);
-
-    if (vector_materials.empty())
-    {
-        vector_mesh[v].obj_data.push_back(-0.1f);
-        vector_mesh[v].obj_data.push_back(-0.1f);
-    }
-    else
-    {
-        if (!temp_textures.empty())
-        {
-            vector_mesh[v].obj_data.push_back(temp_textures[temp.texture[i]].x);
-            vector_mesh[v].obj_data.push_back(temp_textures[temp.texture[i]].y);
-        }
-
-    }
-
-}
-
 void obj::rotateObj(float x, float y)
 {
     x_angle += x;
     y_angle += y; 
-
-    
-    glm::vec3 RIGHT= glm::cross(FRONT, UP);
-    rotation = glm::rotate(y_angle,UP)
-        *glm::rotate(x_angle, RIGHT);
-    FRONT = glm::mat3(rotation) * FRONT;
+ 
+    glm::vec3 EulerAngles(x_angle, y_angle, 0);
+    MyQuaternion = glm::quat(EulerAngles);
+    rotation = glm::toMat4(MyQuaternion);
 }
 
 void obj::traslateObj(float x, float y, float z) {

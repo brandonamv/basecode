@@ -11,8 +11,8 @@ public:
     glm::vec3 getcameraFront();
 
     void move_front();
-    void move_left();
-    void move_right();
+    void move_left(float delta);
+    void move_right(float delta);
     void move_back();
     void move_up();
     void move_down();
@@ -22,11 +22,11 @@ private:
     glm::vec3 cameraFront;
     glm::vec3 cameraLeft;
     glm::vec3 cameraUp;
-    float cameraSpeed = 0.01f;
+    float cameraSpeed = 0.1f;
     float  yAngle= -90.0f;
     float xAngle = 0.0f;
+    float deltaTime;
 
-    void update();
 };
 
 inline camera::camera(glm::vec3 pos, glm::vec3 center, glm::vec3 up, glm::vec3 left) {
@@ -48,15 +48,17 @@ inline float camera::getcameraSpeed() {
 }
 
 inline void camera::move_front() {
-    cameraPos += cameraSpeed * cameraFront;
+    cameraPos += deltaTime * cameraFront * cameraSpeed;
 }
-inline void camera::move_left() {
-    cameraFront += glm::normalize(glm::cross(cameraPos, cameraUp)) * cameraSpeed;
-    cameraLeft = glm::normalize(glm::cross(cameraFront, cameraUp));
+inline void camera::move_left(float delta) {
+    //xAngle -= delta;
+    glm::mat4 rotator = glm::rotate(glm::mat4(1.0f), -delta * deltaTime * cameraSpeed, cameraUp);
+    cameraFront = glm::mat3(rotator) * cameraFront;
 }
-inline void camera::move_right() {
-    cameraFront += glm::normalize(glm::cross( cameraUp,cameraPos)) * cameraSpeed;
-    cameraLeft = glm::normalize(glm::cross(cameraFront, cameraUp));
+inline void camera::move_right(float delta) {
+    //xAngle += delta;
+    glm::mat4 rotator = glm::rotate(glm::mat4(1.0f), delta * deltaTime * cameraSpeed, cameraUp);
+    cameraFront = glm::mat3(rotator) * cameraFront;
 }
 inline void camera::move_up() {
     cameraFront += glm::normalize(glm::cross(cameraPos, cameraLeft)) * cameraSpeed;
@@ -68,19 +70,24 @@ inline void camera::move_down() {
 
 }
 inline void camera::move_back() {
-    cameraPos -= cameraSpeed * cameraFront;
+    cameraPos -= deltaTime * cameraFront * cameraSpeed;
 }
 
 inline glm::vec3 camera::getcameraFront() {
     return cameraPos + cameraFront;
 }
 
-inline void camera::update() {
-    glm::vec3 front;
-    front.x = cos(xAngle) * cos(yAngle);
-    front.y = sin(yAngle);
-    front.z = sin(xAngle) * cos(yAngle);
-    cameraFront = glm::normalize(front);
-    cameraLeft = glm::normalize(glm::cross(cameraFront, cameraUp));
-    cameraUp= glm::normalize(glm::cross(cameraLeft, cameraFront));
-}
+//inline void camera::update(float delta) {
+//
+//    deltaTime = delta;
+//    
+//    // Create camera transformations
+//    //glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+//    /*glm::vec3 front;
+//    front.x = cos(xAngle) * cos(yAngle);
+//    front.y = sin(yAngle);
+//    front.z = sin(xAngle) * cos(yAngle);
+//    cameraFront = glm::normalize(front);
+//    cameraLeft = glm::normalize(glm::cross(cameraFront, cameraUp));
+//    cameraUp= glm::normalize(glm::cross(cameraLeft, cameraFront));*/
+//}
