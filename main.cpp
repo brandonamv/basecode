@@ -63,6 +63,7 @@ int main(){
     glfwSetKeyCallback(window, key_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetMouseButtonCallback(window, mouseClick);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glDisable(GL_CULL_FACE);
     // Set this to true so GLEW knows to use a modern approach to retrieving function pointers and extensions
     glewExperimental = GL_TRUE;
@@ -345,6 +346,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         }
         
     }
+    if (key == GLFW_KEY_G && action == GLFW_RELEASE)
+    {
+        cam->setGodMode(false);
+    }
 }
 
 void do_movement(GLfloat delta)
@@ -360,10 +365,11 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
     lastX = static_cast<GLfloat>(WIDTH) / 2;
     lastY = static_cast<GLfloat>(HEIGHT) / 2;
-
-    GLfloat xoffset = xpos - lastX;
+    double x = WIDTH - xpos;
+    double y = HEIGHT - ypos;
+    GLfloat xoffset = x - lastX;
     // Reversed since y-coordinates go from bottom to left
-    GLfloat yoffset = lastY - ypos;
+    GLfloat yoffset = lastY - y;
     //glfwSetCursorPos(window, WIDTH/2, HEIGHT/2);
     GLfloat dx = xoffset - xini;
     GLfloat dy = yoffset - yini;
