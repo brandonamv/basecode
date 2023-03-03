@@ -224,7 +224,7 @@ int main(){
         }
         ImGui::Separator();
         ImGui::SliderFloat("Camera Speed", &cameraSpeed, 0.1f, 30.0f);
-        cam->setcameraSpeed(cameraSpeed);
+        cam->setcameraSpeed(cameraSpeed,deltaTime);
         if (actual)
         {
             ImGui::Separator();
@@ -354,30 +354,21 @@ void do_movement(GLfloat delta)
         cam->move_front();
     if (keys[GLFW_KEY_S])
         cam->move_back();
-    if (keys[GLFW_KEY_D])
-        cam->move_right();
-    if (keys[GLFW_KEY_A])
-        cam->move_left();
-    if (keys[GLFW_KEY_Q])
-        cam->move_up();
-    if (keys[GLFW_KEY_E])
-        cam->move_down();
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
+    lastX = static_cast<GLfloat>(WIDTH) / 2;
+    lastY = static_cast<GLfloat>(HEIGHT) / 2;
+
+    GLfloat xoffset = xpos - lastX;
+    // Reversed since y-coordinates go from bottom to left
+    GLfloat yoffset = lastY - ypos;
+    //glfwSetCursorPos(window, WIDTH/2, HEIGHT/2);
+    GLfloat dx = xoffset - xini;
+    GLfloat dy = yoffset - yini;
     if (firstMouse)
     {
-        lastX = static_cast<GLfloat>(WIDTH) / 2;
-        lastY = static_cast<GLfloat>(HEIGHT) / 2;
-    
-        GLfloat xoffset = xpos - lastX;
-        // Reversed since y-coordinates go from bottom to left
-        GLfloat yoffset = lastY - ypos;  
-        //glfwSetCursorPos(window, WIDTH/2, HEIGHT/2);
-        GLfloat dx = xoffset - xini;
-        GLfloat dy = yoffset - yini;
-        
         if (actual)
         {
             if (rotation)
@@ -386,9 +377,18 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
                 actual->traslateObj(dx/100, dy/100, 0);
                 
         }
-        xini = xoffset;
-        yini = yoffset;
     }
-
+    else {
+        if (dx != 0)
+        {
+            dx > 0 ? cam->move_right() : cam->move_left();
+        }
+        if (dy!=0)
+        {
+            dy > 0 ? cam->move_up() : cam->move_down();
+        }
+    }
+    xini = xoffset;
+    yini = yoffset;
 }
 

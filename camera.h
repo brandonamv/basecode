@@ -5,14 +5,14 @@ public:
     
     auto getView();
 
-    void setcameraSpeed(float s);
+    void setcameraSpeed(float s, GLfloat delta);
     float getcameraSpeed();
 
     glm::vec3 getcameraFront();
 
     void move_front();
-    void move_left(float delta);
-    void move_right(float delta);
+    void move_left();
+    void move_right();
     void move_back();
     void move_up();
     void move_down();
@@ -26,6 +26,7 @@ private:
     float  yAngle= -90.0f;
     float xAngle = 0.0f;
     float deltaTime;
+    bool godMode = false;
 
 };
 
@@ -40,37 +41,46 @@ inline auto camera::getView() {
     return glm::lookAt(cameraPos, cameraPos+cameraFront, cameraUp);
 }
 
-inline void camera::setcameraSpeed(float s) {
+inline void camera::setcameraSpeed(float s,GLfloat delta) {
     cameraSpeed = s;
+    deltaTime = delta;
 }
 inline float camera::getcameraSpeed() {
     return cameraSpeed;
 }
 
 inline void camera::move_front() {
-    cameraPos += deltaTime * cameraFront * cameraSpeed;
+    godMode?
+        cameraPos += deltaTime * cameraFront * cameraSpeed:
+        cameraPos += deltaTime * glm::vec3(0.0f, 0.0f, -1.0f) * cameraSpeed;
 }
-inline void camera::move_left(float delta) {
+inline void camera::move_left() {
     //xAngle -= delta;
-    glm::mat4 rotator = glm::rotate(glm::mat4(1.0f), -delta * deltaTime * cameraSpeed, cameraUp);
+    glm::mat4 rotator = glm::rotate(glm::mat4(1.0f), deltaTime * cameraSpeed, cameraUp);
     cameraFront = glm::mat3(rotator) * cameraFront;
 }
-inline void camera::move_right(float delta) {
+inline void camera::move_right() {
     //xAngle += delta;
-    glm::mat4 rotator = glm::rotate(glm::mat4(1.0f), delta * deltaTime * cameraSpeed, cameraUp);
+    glm::mat4 rotator = glm::rotate(glm::mat4(1.0f), -deltaTime * cameraSpeed, cameraUp);
     cameraFront = glm::mat3(rotator) * cameraFront;
 }
 inline void camera::move_up() {
-    cameraFront += glm::normalize(glm::cross(cameraPos, cameraLeft)) * cameraSpeed;
-    cameraUp = glm::normalize(glm::cross(cameraLeft, cameraFront));
+    /*cameraFront += glm::normalize(glm::cross(cameraPos, cameraLeft)) * cameraSpeed;
+    cameraUp = glm::normalize(glm::cross(cameraLeft, cameraFront));*/
+    glm::mat4 rotator = glm::rotate(glm::mat4(1.0f), deltaTime * cameraSpeed, cameraLeft);
+    cameraFront = glm::mat3(rotator) * cameraFront;
 }
 inline void camera::move_down() {
-    cameraFront += glm::normalize(glm::cross(cameraLeft,cameraPos)) * cameraSpeed;
-    cameraUp = glm::normalize(glm::cross(cameraLeft, cameraFront));
+    /*cameraFront += glm::normalize(glm::cross(cameraLeft,cameraPos)) * cameraSpeed;
+    cameraUp = glm::normalize(glm::cross(cameraLeft, cameraFront));*/
+    glm::mat4 rotator = glm::rotate(glm::mat4(1.0f), -deltaTime * cameraSpeed, cameraLeft);
+    cameraFront = glm::mat3(rotator) * cameraFront;
 
 }
 inline void camera::move_back() {
-    cameraPos -= deltaTime * cameraFront * cameraSpeed;
+    godMode ?
+        cameraPos -= deltaTime * cameraFront * cameraSpeed :
+        cameraPos -= deltaTime * glm::vec3(0.0f, 0.0f, -1.0f) * cameraSpeed;
 }
 
 inline glm::vec3 camera::getcameraFront() {
