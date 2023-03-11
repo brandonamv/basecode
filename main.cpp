@@ -111,8 +111,8 @@ int main(){
     GLint l_kaLoc = glGetUniformLocation(basic_shader.Program, "ambient_color");
     GLint l_kdLoc = glGetUniformLocation(basic_shader.Program, "difuse_color");
     GLint l_ksLoc = glGetUniformLocation(basic_shader.Program, "specular_color");
-    cam = new camera(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    float cameraSpeed=1.0f;
+    cam = new camera(glm::vec3(100.0f, 1.0f, 100.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    float cameraSpeed=5.0f;
     //string bombillo = openFile();
 
     float ambient_color[3]{ 1.0f,1.0f,1.0f };
@@ -168,7 +168,9 @@ int main(){
                         actual->traslateObj(cam->getcameraFront().x, cam->getcameraFront().y, cam->getcameraFront().z);
                     }
                 }
-                if (ImGui::MenuItem("Save", "Ctrl+S")) { /* Do stuff */ }
+                if (ImGui::MenuItem("Save", "Ctrl+S")) { 
+                
+                }
                 if (ImGui::MenuItem("Load", "Ctrl+W")) {  }
                 ImGui::EndMenu();
             }
@@ -343,13 +345,27 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
             objects.push_back(new obj(objeto));
             actual = objects.back();
             actual->setSelect(true);
+            actual->traslateObj(cam->getcameraFront().x, cam->getcameraFront().y, cam->getcameraFront().z);
         }
         
     }
     if (key == GLFW_KEY_G && action == GLFW_RELEASE)
-    {
         cam->setGodMode(false);
+    if (key == GLFW_KEY_P && action == GLFW_RELEASE)
+    {
+        if (!pause)
+        {
+            pause = true;
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        }
+        else {
+            pause = false;
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        }
+
     }
+
+    
 }
 
 void do_movement(GLfloat delta)
@@ -363,38 +379,34 @@ void do_movement(GLfloat delta)
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
-    lastX = static_cast<GLfloat>(WIDTH) / 2;
-    lastY = static_cast<GLfloat>(HEIGHT) / 2;
-    double x = WIDTH - xpos;
-    double y = HEIGHT - ypos;
-    GLfloat xoffset = x - lastX;
-    // Reversed since y-coordinates go from bottom to left
-    GLfloat yoffset = lastY - y;
-    //glfwSetCursorPos(window, WIDTH/2, HEIGHT/2);
-    GLfloat dx = xoffset - xini;
-    GLfloat dy = yoffset - yini;
-    if (firstMouse)
+    GLfloat dx = xpos - xini;
+    GLfloat dy = ypos - yini;
+    if (pause)
     {
-        if (actual)
+        if (firstMouse)
         {
-            if (rotation)
-                actual->rotateObj(dy/10, dx/10);
-            if (moving)
-                actual->traslateObj(dx/100, dy/100, 0);
+            if (actual)
+            {
+                if (rotation)
+                    actual->rotateObj(dy/10, dx/10);
+                if (moving)
+                    actual->traslateObj(dx/100, dy/100, 0);
                 
+            }
         }
     }
     else {
+
         if (dx != 0)
         {
             dx > 0 ? cam->move_right() : cam->move_left();
         }
         if (dy!=0)
         {
-            dy > 0 ? cam->move_up() : cam->move_down();
+            dy < 0 ? cam->move_up() : cam->move_down();
         }
     }
-    xini = xoffset;
-    yini = yoffset;
+    xini = xpos;
+    yini = ypos;
 }
 

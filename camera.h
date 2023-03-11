@@ -1,7 +1,7 @@
 #pragma once
 class camera {
 public:
-    camera(glm::vec3 pos, glm::vec3 center, glm::vec3 up, glm::vec3 left);
+    camera(glm::vec3 pos, glm::vec3 center, glm::vec3 up);
     
     auto getView();
 
@@ -22,21 +22,18 @@ public:
 private:
     glm::vec3 cameraPos;
     glm::vec3 cameraFront;
-    glm::vec3 cameraLeft;
     glm::vec3 cameraUp;
+
     float cameraSpeed = 0.1f;
-    float  yAngle= -90.0f;
-    float xAngle = 0.0f;
     float deltaTime;
     bool godMode = false;
 
 };
 
-inline camera::camera(glm::vec3 pos, glm::vec3 center, glm::vec3 up, glm::vec3 left) {
+inline camera::camera(glm::vec3 pos, glm::vec3 center, glm::vec3 up) {
     cameraPos = pos;
     cameraFront = center;
     cameraUp = up;
-    cameraLeft = left;
 }
 
 inline auto camera::getView() {
@@ -63,34 +60,32 @@ inline void camera::move_back() {
         cameraPos -= deltaTime * glm::vec3(cameraFront.x, 0.0f, cameraFront.z) * cameraSpeed;
 }
 inline void camera::move_left() {
-    //xAngle -= delta;
     glm::mat4 rotator = glm::rotate(glm::mat4(1.0f), deltaTime * cameraSpeed, cameraUp);
     cameraFront = glm::mat3(rotator) * cameraFront;
 }
 inline void camera::move_right() {
-    //xAngle += delta;
     glm::mat4 rotator = glm::rotate(glm::mat4(1.0f), -deltaTime * cameraSpeed, cameraUp);
     cameraFront = glm::mat3(rotator) * cameraFront;
 }
 inline void camera::move_up() {
-    /*cameraFront += glm::normalize(glm::cross(cameraPos, cameraLeft)) * cameraSpeed;
-    cameraUp = glm::normalize(glm::cross(cameraLeft, cameraFront));*/
-    glm::mat4 rotator = glm::rotate(glm::mat4(1.0f), deltaTime * cameraSpeed, cameraLeft);
+    glm::vec3 left = glm::cross(cameraFront, cameraUp);
+    glm::mat4 rotator = glm::rotate(glm::mat4(1.0f), deltaTime * cameraSpeed, left);
     cameraFront = glm::mat3(rotator) * cameraFront;
 }
 inline void camera::move_down() {
-    /*cameraFront += glm::normalize(glm::cross(cameraLeft,cameraPos)) * cameraSpeed;
-    cameraUp = glm::normalize(glm::cross(cameraLeft, cameraFront));*/
-    glm::mat4 rotator = glm::rotate(glm::mat4(1.0f), -deltaTime * cameraSpeed, cameraLeft);
+    glm::vec3 left = glm::cross(cameraFront, cameraUp);
+    glm::mat4 rotator = glm::rotate(glm::mat4(1.0f), -deltaTime * cameraSpeed, left);
     cameraFront = glm::mat3(rotator) * cameraFront;
 
 }
 
 inline glm::vec3 camera::getcameraFront() {
-    return cameraPos + cameraFront;
+    return cameraPos+cameraFront;
 }
 
 inline void camera::setGodMode(bool active)
 {
     godMode = !((active || godMode) && (!active || !godMode));
 }
+
+

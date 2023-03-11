@@ -69,6 +69,7 @@ const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 
 bool firstMouse = false;
 bool rotation=false, moving=false;
+bool pause = false;
 double xini, yini;
 
 camera *cam;
