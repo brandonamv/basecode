@@ -146,6 +146,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="camera.h" />
+    <ClInclude Include="particle.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />
     <ClInclude Include="imgui\imgui_impl_glfw.h" />
@@ -171,11 +172,14 @@
     <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="obj.cpp" />
+    <ClCompile Include="particle.cpp" />
     <ClCompile Include="subobj.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="color_shader.frag" />
     <None Include="color_shader.vs" />
+    <None Include="particle_shader.frag" />
+    <None Include="particle_shader.vs" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

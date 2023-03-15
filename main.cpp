@@ -77,8 +77,7 @@ int main(){
 
     // Build and compile our shader program
     Shader basic_shader("color_shader.vs", "color_shader.frag");
-
-
+    ParticleGenerator *particle_system=new ParticleGenerator(Shader("particle_shader.vs", "particle_shader.frag"), 500);
     // Initialize ImGUI
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -111,7 +110,7 @@ int main(){
     GLint l_kaLoc = glGetUniformLocation(basic_shader.Program, "ambient_color");
     GLint l_kdLoc = glGetUniformLocation(basic_shader.Program, "difuse_color");
     GLint l_ksLoc = glGetUniformLocation(basic_shader.Program, "specular_color");
-    cam = new camera(glm::vec3(100.0f, 1.0f, 100.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    cam = new camera(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     float cameraSpeed=5.0f;
     //string bombillo = openFile();
 
@@ -134,6 +133,7 @@ int main(){
         GLfloat currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
+        particle_system->Update(deltaTime, 10, glm::vec3(1.0f, 1.0f, 1.0f));
         int w, h;
         glfwGetFramebufferSize(window, &w, &h);
 
@@ -261,7 +261,7 @@ int main(){
         // Create camera transformations
         glm::mat4 view = cam->getView();
         glm::mat4 projection = glm::perspective(60.0f * 3.14159f / 180.0f, float(w)/float(h), 0.01f, 100.0f);
-        
+        particle_system->Draw(view, projection);
 
         // Pass the matrices to the shader
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));

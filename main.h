@@ -32,6 +32,7 @@
 #include "imgui_impl_opengl3.h"
 
 #include <camera.h>
+#include <particle.h>
 // Function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -60,8 +61,6 @@ FILE* lIn;
 
 //scene atributes
 float backgroundColor[4] = {0.0f, 1.0f, 1.0f,1.0f};
-
-
 //obj atributes
 std::vector<obj*> objects;
 obj* actual=nullptr;
