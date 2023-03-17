@@ -12,9 +12,10 @@
 struct Particle {
     glm::vec3 Position, Velocity;
     glm::vec4 Color;
+    float scale;
     float     Life;
 
-    Particle() : Position(0.0f), Velocity(0.0f), Color(1.0f), Life(0.0f) { }
+    Particle() : Position(0.0f), Velocity(0.0f), Color(1.0f),scale(1.0f), Life(0.0f) { }
 };
 
 
@@ -35,11 +36,11 @@ private:
     std::vector<Particle> particles;
     unsigned int amount;
     // render state
-    GLint viewLoc, projLoc;
+    GLint viewLoc, projLoc, modelLoc;
     GLint offsetLoc, colorLoc;
     Shader shader;
     int size;
-    unsigned int VAO;
+    GLuint VAO,VBO;
     // initializes buffer and vertex attributes
     void init();
     // returns the first Particle index that's currently unused e.g. Life <= 0.0f or 0 if no particle is currently inactive

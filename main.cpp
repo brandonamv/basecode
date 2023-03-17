@@ -73,11 +73,12 @@ int main(){
     // OpenGL options
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_POLYGON_OFFSET_FILL);
+    glEnable(GL_BLEND);
     glPolygonOffset(1.0, 1.0);
 
     // Build and compile our shader program
     Shader basic_shader("color_shader.vs", "color_shader.frag");
-    ParticleGenerator *particle_system=new ParticleGenerator(Shader("particle_shader.vs", "particle_shader.frag"), 500);
+    ParticleGenerator *particle_system=new ParticleGenerator(Shader("particle_shader.vs", "particle_shader.frag"), 100);
     // Initialize ImGUI
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -133,7 +134,7 @@ int main(){
         GLfloat currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
-        particle_system->Update(deltaTime, 10, glm::vec3(1.0f, 1.0f, 1.0f));
+        particle_system->Update(deltaTime, 100, glm::vec3(1.0f, 1.0f, 1.0f));  
         int w, h;
         glfwGetFramebufferSize(window, &w, &h);
 
@@ -252,6 +253,7 @@ int main(){
         ImGui::SliderFloat("Light Intensity", &intensity, 0.0f, 10.0f);
         ImGui::ColorEdit3("Difuse Color", difuse_color);
         ImGui::ColorEdit3("Specular Color", specular_color);
+        basic_shader.Use();
         glUniform3f(l_kaLoc, ambient_color[0], ambient_color[1], ambient_color[2]);
         glUniform3f(l_kdLoc, difuse_color[0], difuse_color[1], difuse_color[2]);
         glUniform3f(l_ksLoc, specular_color[0], specular_color[1], specular_color[2]);
@@ -261,7 +263,6 @@ int main(){
         // Create camera transformations
         glm::mat4 view = cam->getView();
         glm::mat4 projection = glm::perspective(60.0f * 3.14159f / 180.0f, float(w)/float(h), 0.01f, 100.0f);
-        particle_system->Draw(view, projection);
 
         // Pass the matrices to the shader
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
@@ -276,6 +277,7 @@ int main(){
                 x->setSelect(x == actual);
             }
         }
+        particle_system->Draw(view, projection);
 
         // Renders the ImGUI elements
         ImGui::Render();
