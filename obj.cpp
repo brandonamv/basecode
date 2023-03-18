@@ -178,6 +178,7 @@ obj::~obj()
 
 void obj::draw(Shader basic_shader)
 {
+    
     // Use cooresponding shader when setting uniforms/drawing objects
     GLint ambientColorLoc = glGetUniformLocation(basic_shader.Program, "Ka");
     GLint difuseColorLoc = glGetUniformLocation(basic_shader.Program, "Kd");
