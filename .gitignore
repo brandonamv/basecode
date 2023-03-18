@@ -349,3 +349,5 @@ MigrationBackup/
 .ionide/
 /Sponza-master.zip
 /objetos/sponza.mtl
+*.zip
+*.mtl
