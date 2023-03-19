@@ -23,12 +23,14 @@ void ParticleGenerator::Update(float dt, unsigned int newParticles, glm::vec3 of
         p.Life -= dt; // reduce life
         if (p.Life > 0.0f)
         {	// particle is alive, thus update
-            p.scale -= dt / 10.0f;
+            float t = p.Life / 1.2f;
+            p.Color = t * (glm::vec4(1.0f, .9f, .01f, .8f)) + (1 - t) * (glm::vec4(1.0f, .0f, .0f, 8.0f));
+            p.scale -= dt/3.0f ;
             p.Position -= p.Velocity * dt;
-            p.Color.x += dt / 2.5f;
+            /*p.Color.x += dt / 2.5f;
             p.Color.y += dt / 2.5f;
             p.Color.z += dt / 2.5f;
-            p.Color.w -= dt / 2.5f;
+            p.Color.w -= dt / 2.5f;*/
         }
     }
 }
@@ -49,7 +51,7 @@ void ParticleGenerator::Draw(glm::mat4 view, glm::mat4 proj)
         if (particle.Life > 0.0f)
         {
             glm::mat4 model =
-                glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f) + particle.Position) *
+                glm::translate(glm::mat4(1.0f), particle.Position) *
                 glm::rotate(glm::mat4(1.0f), .0f, glm::vec3(0.0f, 1.0f, 0.0f)) *
                 glm::rotate(glm::mat4(1.0f), .0f, glm::vec3(1.0f, 0.0f, 0.0f)) *
                 glm::scale(glm::mat4(1.0f), glm::vec3(.5f, .5f, .5f)*particle.scale);
@@ -168,9 +170,9 @@ unsigned int ParticleGenerator::firstUnusedParticle()
 
 void ParticleGenerator::respawnParticle(Particle& particle, glm::vec3 offset)
 {
-    particle.scale = 1.0f;
+    particle.scale = .5f;
     particle.Position = glm::vec3(.0f,.0f,.0f);
-    particle.Color = glm::vec4(1.0f, (rand() % 100) / 100.0f, (rand() % 100) / 100.0f, 1.0f);
-    particle.Life = 1.0f;
-    particle.Velocity = glm::vec3(((rand() % 100) - 50) / 30.0f, -(rand() % 100) / 5.0f, (rand() % 100) - 50 / 30.0f) ;
+    particle.Color = glm::vec4(1.0f, (rand() % 50) / 100.0f, (rand() % 30) / 100.0f, 1.0f);
+    particle.Life = 1.2f;
+    particle.Velocity = glm::vec3(((rand() % 100) - 100) / 50.0f, -(rand() % 100) / 10.0f, ((rand() % 100) - 100) / 50.0f)/5.0f ;
 }

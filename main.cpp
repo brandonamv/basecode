@@ -134,7 +134,7 @@ int main(){
         GLfloat currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
-        particle_system->Update(deltaTime, 100, glm::vec3(1.0f, 1.0f, 1.0f));  
+        particle_system->Update(deltaTime, 10, glm::vec3(1.0f, 1.0f, 1.0f));  
         int w, h;
         glfwGetFramebufferSize(window, &w, &h);
 
