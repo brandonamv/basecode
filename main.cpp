@@ -179,6 +179,32 @@ int main(){
         }
         //// Text that appears in the window
         ImGui::ColorEdit4("BackGround Color", backgroundColor);
+        ImGui::Checkbox("Back Face Culling", &backFaceCulling);
+        if (backFaceCulling)
+        {
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_BACK);
+            glFrontFace(GL_CW);
+        }
+        else {
+            glDisable(GL_CULL_FACE);
+        }
+        ImGui::Checkbox("Z-Buffer", &zBuffer);
+        if (zBuffer)
+        {
+            glEnable(GL_DEPTH_TEST);
+        }
+        else {
+            glDisable(GL_DEPTH_TEST);
+        }
+        ImGui::Checkbox("Antialliasing", &antialliasing);
+        if (antialliasing)
+        {
+            glEnable(GL_MULTISAMPLE);
+        }
+        else {
+            glDisable(GL_MULTISAMPLE);
+        }
         if (!objects.empty())
         {
             if (ImGui::Button("Clear Scene")) {
@@ -188,32 +214,6 @@ int main(){
                 }
                 objects.clear();
                    actual = nullptr;
-            }
-            ImGui::Checkbox("Back Face Culling", &backFaceCulling);
-            if (backFaceCulling)
-            {
-                glEnable(GL_CULL_FACE);
-                glCullFace(GL_BACK);
-                glFrontFace(GL_CW);
-            }
-            else {
-                glDisable(GL_CULL_FACE);
-            }
-            ImGui::Checkbox("Z-Buffer", &zBuffer);
-            if (zBuffer)
-            {
-                glEnable(GL_DEPTH_TEST);
-            }
-            else {
-                glDisable(GL_DEPTH_TEST);
-            }
-            ImGui::Checkbox("Antialliasing", &antialliasing);
-            if (antialliasing)
-            {
-                glEnable(GL_MULTISAMPLE);
-            }
-            else {
-                glDisable(GL_MULTISAMPLE);
             }
         }
         
