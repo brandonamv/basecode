@@ -23,10 +23,19 @@ void ParticleGenerator::Update(float dt, unsigned int newParticles, glm::vec3 of
         p.Life -= dt; // reduce life
         if (p.Life > 0.0f)
         {	// particle is alive, thus update
-            float t = p.Life / 1.2f;
+            float t = p.Life / p.tLife;
             p.Color = t * (glm::vec4(1.0f, .9f, .01f, .8f)) + (1 - t) * (glm::vec4(1.0f, .0f, .0f, 8.0f));
-            p.scale -= dt/3.0f ;
-            p.Position -= p.Velocity * dt;
+            p.scale -= dt/ (p.tLife*2.0f);
+            if (p.Life*2.0f < p.tLife ) {
+                p.Position.x += p.Velocity.x * dt;
+                p.Position.z += p.Velocity.z * dt;
+            }
+            else {
+                p.Position.x -= p.Velocity.x * dt;
+                p.Position.z -= p.Velocity.z * dt;
+            }
+            p.Position.y -= p.Velocity.y * dt;
+            
             /*p.Color.x += dt / 2.5f;
             p.Color.y += dt / 2.5f;
             p.Color.z += dt / 2.5f;
@@ -173,6 +182,7 @@ void ParticleGenerator::respawnParticle(Particle& particle, glm::vec3 offset)
     particle.scale = .5f;
     particle.Position = glm::vec3(.0f,.0f,.0f);
     particle.Color = glm::vec4(1.0f, (rand() % 50) / 100.0f, (rand() % 30) / 100.0f, 1.0f);
-    particle.Life = 1.2f;
-    particle.Velocity = glm::vec3(((rand() % 100) - 100) / 50.0f, -(rand() % 100) / 10.0f, ((rand() % 100) - 100) / 50.0f)/5.0f ;
+    particle.Life = 0.8f+sin(rand())/10.0f;
+    particle.tLife = particle.Life;
+    particle.Velocity = glm::vec3(((rand() % 100) - 50) / 20.0f, -(rand() % 100) / 10.0f, ((rand() % 100) - 50) / 20.0f)/5.0f ;
 }

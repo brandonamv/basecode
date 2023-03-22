@@ -78,7 +78,7 @@ int main(){
 
     // Build and compile our shader program
     Shader basic_shader("color_shader.vs", "color_shader.frag");
-    ParticleGenerator *particle_system=new ParticleGenerator(Shader("particle_shader.vs", "particle_shader.frag"), 100);
+    ParticleGenerator *particle_system=new ParticleGenerator(Shader("particle_shader.vs", "particle_shader.frag"), 500);
     // Initialize ImGUI
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -134,7 +134,7 @@ int main(){
         GLfloat currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
-        particle_system->Update(deltaTime, 10, glm::vec3(1.0f, 1.0f, 1.0f));  
+        particle_system->Update(deltaTime, 50, glm::vec3(1.0f, 1.0f, 1.0f));  
         int w, h;
         glfwGetFramebufferSize(window, &w, &h);
 
