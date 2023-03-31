@@ -44,7 +44,7 @@ string openFile() {
 // The MAIN function, from here we start the application and run the game loop
 int main(){
 
-    
+    srand(time(NULL));
     // Init GLFW
     glfwInit();
     // Set all the required options for GLFW, (GLSL version required = 3.0)
@@ -56,7 +56,7 @@ int main(){
     glfwWindowHint(GLFW_SAMPLES, 4);
 
     // Create a GLFWwindow object that we can use for GLFW's functions
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Proyecto 2 CG1 - UCV", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Proyecto 1 CG2 - UCV", nullptr, nullptr);
     glfwMakeContextCurrent(window);
 
     // Set the required callback functions
@@ -69,11 +69,12 @@ int main(){
     glewExperimental = GL_TRUE;
     // Initialize GLEW to setup the OpenGL Function pointers
     glewInit();
-
     // OpenGL options
+    glEnable(GL_STENCIL_TEST);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_POLYGON_OFFSET_FILL);
     glEnable(GL_BLEND);
+    glEnable(GL_ALPHA_TEST);
     glPolygonOffset(1.0, 1.0);
 
     // Build and compile our shader program
@@ -93,8 +94,6 @@ int main(){
     static bool vertexPoint;
     static bool lineTriangle;
     static bool fpsShow;
-    static bool zBuffer;
-    static bool backFaceCulling;
     static bool antialliasing;
     float sx,sy,sz;
     float* objColor = nullptr, * boundingColor;
@@ -134,7 +133,7 @@ int main(){
         GLfloat currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
-        particle_system->Update(deltaTime, 50, glm::vec3(1.0f, 1.0f, 1.0f));  
+        particle_system->Update(deltaTime, 100, glm::vec3(1.0f, 1.0f, 1.0f));  
         int w, h;
         glfwGetFramebufferSize(window, &w, &h);
 
@@ -147,7 +146,7 @@ int main(){
 
         // Clear the colorbuffer
         glClearColor(backgroundColor[0], backgroundColor[1], backgroundColor[2], backgroundColor[3]);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
         //// Tell OpenGL a new frame is about to begin
         ImGui_ImplOpenGL3_NewFrame();
@@ -179,7 +178,7 @@ int main(){
         }
         //// Text that appears in the window
         ImGui::ColorEdit4("BackGround Color", backgroundColor);
-        ImGui::Checkbox("Back Face Culling", &backFaceCulling);
+        /*ImGui::Checkbox("Back Face Culling", &backFaceCulling);
         if (backFaceCulling)
         {
             glEnable(GL_CULL_FACE);
@@ -196,7 +195,7 @@ int main(){
         }
         else {
             glDisable(GL_DEPTH_TEST);
-        }
+        }*/
         ImGui::Checkbox("Antialliasing", &antialliasing);
         if (antialliasing)
         {
@@ -246,13 +245,18 @@ int main(){
         
         //// Ends the window
         ImGui::End();
-
+        glm::mat4 view = cam->getView();
+        glm::mat4 projection = glm::perspective(60.0f * 3.14159f / 180.0f, float(w) / float(h), 0.01f, 100.0f);
         //menu luces
         ImGui::Begin("Lights Menu", &my_tool_active, ImGuiWindowFlags_MenuBar);
         ImGui::ColorEdit3("Ambient Color", ambient_color);
+        
         ImGui::SliderFloat("Light Intensity", &intensity, 0.0f, 10.0f);
         ImGui::ColorEdit3("Difuse Color", difuse_color);
         ImGui::ColorEdit3("Specular Color", specular_color);
+        particle_system->Draw(view, projection);
+        
+        
         basic_shader.Use();
         glUniform3f(l_kaLoc, ambient_color[0], ambient_color[1], ambient_color[2]);
         glUniform3f(l_kdLoc, difuse_color[0], difuse_color[1], difuse_color[2]);
@@ -261,8 +265,7 @@ int main(){
         
         ImGui::End();
         // Create camera transformations
-        glm::mat4 view = cam->getView();
-        glm::mat4 projection = glm::perspective(60.0f * 3.14159f / 180.0f, float(w)/float(h), 0.01f, 100.0f);
+        
 
         // Pass the matrices to the shader
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
@@ -277,7 +280,7 @@ int main(){
                 x->setSelect(x == actual);
             }
         }
-        particle_system->Draw(view, projection);
+        
 
         // Renders the ImGUI elements
         ImGui::Render();

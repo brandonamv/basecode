@@ -2,6 +2,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "particle.h"
 #include <vector>
+#include <math.h>
+# define MY_PI 3.14159265358979323846
 ParticleGenerator::ParticleGenerator(Shader shader, unsigned int amount)
     : shader(shader), amount(amount)
 {
@@ -24,7 +26,7 @@ void ParticleGenerator::Update(float dt, unsigned int newParticles, glm::vec3 of
         if (p.Life > 0.0f)
         {	// particle is alive, thus update
             float t = p.Life / p.tLife;
-            p.Color = t * (glm::vec4(1.0f, .9f, .01f, .8f)) + (1 - t) * (glm::vec4(1.0f, .0f, .0f, 8.0f));
+            p.Color = t * (glm::vec4(1.0f, .9f, .01f, .8f)) + (1 - t) * (glm::vec4(1.0f, .0f, .0f, .0f));
             p.scale -= dt/ (p.tLife*2.0f);
             if (p.Life*2.0f < p.tLife ) {
                 p.Position.x += p.Velocity.x * dt;
@@ -35,7 +37,7 @@ void ParticleGenerator::Update(float dt, unsigned int newParticles, glm::vec3 of
                 p.Position.z -= p.Velocity.z * dt;
             }
             p.Position.y -= p.Velocity.y * dt;
-            
+
             /*p.Color.x += dt / 2.5f;
             p.Color.y += dt / 2.5f;
             p.Color.z += dt / 2.5f;
@@ -67,7 +69,7 @@ void ParticleGenerator::Draw(glm::mat4 view, glm::mat4 proj)
             glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
             glUniform4f(colorLoc, particle.Color.x, particle.Color.y, particle.Color.z, particle.Color.w);
             glBindVertexArray(this->VAO);
-            glDrawArrays(GL_TRIANGLES, 0, this->size);
+            glDrawArrays(GL_TRIANGLES, 0, this->size/ sizeof(GLfloat));
         }
     }
     // don't forget to reset to default blending mode
@@ -81,70 +83,139 @@ void ParticleGenerator::init()
     projLoc = glGetUniformLocation(this->shader.Program, "projection");
     modelLoc = glGetUniformLocation(this->shader.Program, "model");
     colorLoc = glGetUniformLocation(this->shader.Program, "Color");
-    // set up mesh and attribute properties
-    GLfloat cube_vertices[] =
+    float radius = 1.0f;
+    int sectorCount = 30,stackCount=10;
+    float x, y, z, xy;                              // vertex position
+    double PI = MY_PI;
+    float sectorStep = 2 * PI / sectorCount;
+    float stackStep = PI / stackCount;
+    float sectorAngle, stackAngle;
+    std::vector<GLfloat> vertices;
+    for (int i = 0; i <= stackCount; ++i)
     {
-        // back
-        0.5,0.5, -0.5,
-        0.5,-0.5, -0.5,
-       -0.5,0.5,-0.5,  
-       -0.5,0.5,-0.5,
-        0.5,-0.5, -0.5,
-       -0.5,-0.5,-0.5,
+        stackAngle = PI / 2 - i * stackStep;        // starting from pi/2 to -pi/2
+        xy = radius * cosf(stackAngle);             // r * cos(u)
+        z = radius * sinf(stackAngle);              // r * sin(u)
 
-       // front 
-      -0.5,0.5,0.5,  
-      -0.5,-0.5,0.5,  
-       0.5,-0.5,0.5,  
-      -0.5,0.5,0.5,  
-       0.5,-0.5,0.5, 
-       0.5,0.5,0.5,  
+        // add (sectorCount+1) vertices per stack
+        // the first and last vertices have same position and normal, but different tex coords
+        for (int j = 0; j <= sectorCount; ++j)
+        {
+            sectorAngle = j * sectorStep;           // starting from 0 to 2pi
 
-       // left
-       -0.5,0.5,-0.5, 
-       -0.5,-0.5,-0.5, 
-       -0.5,-0.5,0.5, 
-       -0.5,0.5,-0.5, 
-       -0.5,-0.5,0.5, 
-       -0.5,0.5,0.5, 
+            // vertex position (x, y, z)
+            x = xy * cosf(sectorAngle);             // r * cos(u) * cos(v)
+            y = xy * sinf(sectorAngle);             // r * cos(u) * sin(v)
+            vertices.push_back(roundf(x *100)/100);
+            vertices.push_back(roundf(y * 100)/100);
+            vertices.push_back(roundf(z * 100)/100);
+        }
+    }
+    std::vector<GLfloat> circle;
+    int k1, k2;
+    for (int i = 0; i < stackCount; ++i)
+    {
+        k1 = i * (sectorCount + 1);     // beginning of current stack
+        k2 = k1 + sectorCount + 1;      // beginning of next stack
+
+        for (int j = 0; j < sectorCount; ++j, ++k1, ++k2)
+        {
+            // 2 triangles per sector excluding first and last stacks
+            // k1 => k2 => k1+1
+            if (i != 0)
+            {
+                circle.push_back(vertices[k1*3]);
+                circle.push_back(vertices[k1*3+1]);
+                circle.push_back(vertices[k1*3+2]);
+                circle.push_back(vertices[k2*3]);
+                circle.push_back(vertices[k2*3+1]);
+                circle.push_back(vertices[k2*3+2]);
+                circle.push_back(vertices[(k1 + 1)*3]);
+                circle.push_back(vertices[(k1 + 1)*3+1]);
+                circle.push_back(vertices[(k1 + 1)*3+2]);
+            }
+
+            // k1+1 => k2 => k2+1
+            if (i != (stackCount - 1))
+            {
+                circle.push_back(vertices[(k1 + 1)*3]);
+                circle.push_back(vertices[(k1 + 1)*3+1]);
+                circle.push_back(vertices[(k1 + 1)*3+2]);
+                circle.push_back(vertices[k2*3]);
+                circle.push_back(vertices[k2*3+1]);
+                circle.push_back(vertices[k2*3+2]);
+                circle.push_back(vertices[(k2 + 1)*3]);
+                circle.push_back(vertices[(k2 + 1)*3+1]);
+                circle.push_back(vertices[(k2 + 1)*3+2]);
+            }
+
+        }
+    }
+    /*
+    // set up mesh and attribute properties
+    //GLfloat cube_vertices[] =
+    //{
+    //    // back
+    //    0.5,0.5, -0.5,
+    //    0.5,-0.5, -0.5,
+    //   -0.5,0.5,-0.5,  
+    //   -0.5,0.5,-0.5,
+    //    0.5,-0.5, -0.5,
+    //   -0.5,-0.5,-0.5,
+
+    //   // front 
+    //  -0.5,0.5,0.5,  
+    //  -0.5,-0.5,0.5,  
+    //   0.5,-0.5,0.5,  
+    //  -0.5,0.5,0.5,  
+    //   0.5,-0.5,0.5, 
+    //   0.5,0.5,0.5,  
+
+    //   // left
+    //   -0.5,0.5,-0.5, 
+    //   -0.5,-0.5,-0.5, 
+    //   -0.5,-0.5,0.5, 
+    //   -0.5,0.5,-0.5, 
+    //   -0.5,-0.5,0.5, 
+    //   -0.5,0.5,0.5, 
 
 
 
-       // right
-        0.5,0.5,0.5,  
-        0.5,-0.5,0.5, 
-        0.5,-0.5,-0.5, 
-        0.5,0.5,0.5, 
-        0.5,-0.5,-0.5, 
-        0.5,0.5,-0.5, 
+    //   // right
+    //    0.5,0.5,0.5,  
+    //    0.5,-0.5,0.5, 
+    //    0.5,-0.5,-0.5, 
+    //    0.5,0.5,0.5, 
+    //    0.5,-0.5,-0.5, 
+    //    0.5,0.5,-0.5, 
 
 
-        // bottom
-       -0.5,-0.5,0.5, 
-       -0.5,-0.5,-0.5, 
-        0.5,-0.5,-0.5,
-       -0.5,-0.5,0.5, 
-        0.5,-0.5,-0.5, 
-        0.5,-0.5,0.5, 
+    //    // bottom
+    //   -0.5,-0.5,0.5, 
+    //   -0.5,-0.5,-0.5, 
+    //    0.5,-0.5,-0.5,
+    //   -0.5,-0.5,0.5, 
+    //    0.5,-0.5,-0.5, 
+    //    0.5,-0.5,0.5, 
 
 
-        // top
-        -0.5,0.5,-0.5,  
-        -0.5,0.5,0.5,  
-         0.5,0.5,0.5,  
-        -0.5,0.5,-0.5,   
-         0.5,0.5,0.5, 
-         0.5,0.5,-0.5
-    };
+    //    // top
+    //    -0.5,0.5,-0.5,  
+    //    -0.5,0.5,0.5,  
+    //     0.5,0.5,0.5,  
+    //    -0.5,0.5,-0.5,   
+    //     0.5,0.5,0.5, 
+    //     0.5,0.5,-0.5
+    //};*/
     glGenVertexArrays(1, &this->VAO);
     glBindVertexArray(this->VAO);
     
     glGenBuffers(1, &this->VBO);
     
     // fill mesh buffer
-    size = sizeof(cube_vertices);
+    size = circle.size()*sizeof(GLfloat*);
     glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
-    glBufferData(GL_ARRAY_BUFFER, this->size, cube_vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, this->size, circle.data(), GL_STATIC_DRAW);
     // set mesh attributes
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);
