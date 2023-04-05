@@ -106,10 +106,6 @@ int main(){
     // Get the uniform locations
     GLint viewLoc = glGetUniformLocation(basic_shader.Program, "view");
     GLint projLoc = glGetUniformLocation(basic_shader.Program, "projection");
-    GLint l_positionLoc = glGetUniformLocation(basic_shader.Program, "ligth_position");
-    GLint l_kaLoc = glGetUniformLocation(basic_shader.Program, "ambient_color");
-    GLint l_kdLoc = glGetUniformLocation(basic_shader.Program, "difuse_color");
-    GLint l_ksLoc = glGetUniformLocation(basic_shader.Program, "specular_color");
     cam = new camera(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     float cameraSpeed=5.0f;
     //string bombillo = openFile();
@@ -249,19 +245,10 @@ int main(){
         glm::mat4 projection = glm::perspective(60.0f * 3.14159f / 180.0f, float(w) / float(h), 0.01f, 100.0f);
         //menu luces
         ImGui::Begin("Lights Menu", &my_tool_active, ImGuiWindowFlags_MenuBar);
-        ImGui::ColorEdit3("Ambient Color", ambient_color);
         
-        ImGui::SliderFloat("Light Intensity", &intensity, 0.0f, 10.0f);
-        ImGui::ColorEdit3("Difuse Color", difuse_color);
-        ImGui::ColorEdit3("Specular Color", specular_color);
         particle_system->Draw(view, projection);
         
-        
         basic_shader.Use();
-        glUniform3f(l_kaLoc, ambient_color[0], ambient_color[1], ambient_color[2]);
-        glUniform3f(l_kdLoc, difuse_color[0], difuse_color[1], difuse_color[2]);
-        glUniform3f(l_ksLoc, specular_color[0], specular_color[1], specular_color[2]);
-        glUniform3f(l_positionLoc, .0f,.0f,.0f);
         
         ImGui::End();
         // Create camera transformations

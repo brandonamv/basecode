@@ -10,12 +10,11 @@
 
 // Represents a single particle and its state
 struct Particle {
+    int id;
     glm::vec3 Position, Velocity;
     glm::vec4 Color;
     float scale;
     float Life,tLife;
-
-    Particle() : Position(0.0f), Velocity(0.0f), Color(1.0f),scale(1.0f), Life(0.8f) , tLife(.8f) { }
 };
 
 
@@ -32,6 +31,9 @@ public:
     // render all particles
     void Draw(glm::mat4 view, glm::mat4 proj);
 private:
+
+    int partition(std::vector<Particle>& arr, int start, int end);
+    void quickSort(std::vector<Particle>& arr, int start, int end);
     // state
     std::vector<Particle> particles;
     unsigned int amount;

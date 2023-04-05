@@ -1,7 +1,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "particle.h"
-#include <vector>
 #include <math.h>
 # define MY_PI 3.14159265358979323846
 ParticleGenerator::ParticleGenerator(Shader shader, unsigned int amount)
@@ -56,7 +55,7 @@ void ParticleGenerator::Draw(glm::mat4 view, glm::mat4 proj)
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
     // use additive blending to give it a 'glow' effect
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    
+    quickSort(particles, 0, particles.size()-1);
     for (Particle particle : this->particles)
     {
         if (particle.Life > 0.0f)
@@ -74,6 +73,63 @@ void ParticleGenerator::Draw(glm::mat4 view, glm::mat4 proj)
     }
     // don't forget to reset to default blending mode
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+int ParticleGenerator::partition(std::vector<Particle>& arr, int start, int end)
+{
+    // assuming last element as pivotElement
+    int index = 0, pivotIndex{};
+    Particle pivotElement = arr[end];
+    std::vector<Particle> temp(end - start + 1); // making an array whose size is equal to current partition range...
+    for (int i = start; i <= end; i++) // pushing all the elements in temp which are smaller than pivotElement
+    {
+        if (arr[i].Color.w > pivotElement.Color.w)
+        {
+            temp[index] = arr[i];
+            index++;
+        }
+    }
+
+    temp[index] = pivotElement; // pushing pivotElement in temp
+    index++;
+
+    for (int i = start; i < end; i++) // pushing all the elements in temp which are greater than pivotElement
+    {
+        if (arr[i].Color.w < pivotElement.Color.w)
+        {
+            temp[index] = arr[i];
+            index++;
+        }
+    }
+    // all the elements now in temp array are order :
+    // leftmost elements are lesser than pivotElement and rightmost elements are greater than pivotElement
+
+
+
+    index = 0;
+    for (int i = start; i <= end; i++) // copying all the elements to original array i.e arr
+    {
+        if (arr[i].id == pivotElement.id)
+        {
+            // for getting pivot index in the original array.
+            // we need the pivotIndex value in the original and not in the temp array
+            pivotIndex = i;
+        }
+        arr[i] = temp[index];
+        index++;
+    }
+    return pivotIndex; // returning pivotIndex
+}
+
+void ParticleGenerator::quickSort(std::vector<Particle>& arr, int start, int end)
+{
+    if (start < end)
+    {
+        int partitionIndex = partition(arr, start, end); // for getting partition
+        quickSort(arr, start, partitionIndex - 1); // sorting left side array
+        quickSort(arr, partitionIndex + 1, end); // sorting right side array
+    }
+    return;
 }
 
 void ParticleGenerator::init()
@@ -221,8 +277,12 @@ void ParticleGenerator::init()
     glEnableVertexAttribArray(0);
 
     // create this->amount default particle instances
-    for (unsigned int i = 0; i < this->amount; ++i)
-        this->particles.push_back(Particle());
+    for (unsigned int i = 0; i < this->amount; ++i) {
+        Particle temp;
+        temp.id = i;
+        this->particles.push_back(temp);
+    }
+        
 }
 
 // stores the index of the last particle used (for quick access to next dead particle)
