@@ -42,7 +42,7 @@ private:
     GLint offsetLoc, colorLoc;
     Shader shader;
     int size;
-    GLuint VAO,VBO;
+    GLuint pointVAO,pointVBO, quadVAO, quadVBO;
     // initializes buffer and vertex attributes
     void init();
     // returns the first Particle index that's currently unused e.g. Life <= 0.0f or 0 if no particle is currently inactive
