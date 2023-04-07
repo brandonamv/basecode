@@ -36,10 +36,15 @@ private:
     void quickSort(std::vector<Particle>& arr, int start, int end);
     // state
     std::vector<Particle> particles;
+    //particles options
+    glm::vec3 min, max; //area de spawn
+    glm::vec4 color_init, color_mid, color_fin; //colores
+    int color_variance; //varianza color
+    float mass; //masa de la particula
     unsigned int amount;
     // render state
     GLint viewLoc, projLoc, modelLoc;
-    GLint offsetLoc, colorLoc;
+    GLint colorLoc, sizeLoc;
     Shader shader;
     int size;
     GLuint pointVAO,pointVBO, quadVAO, quadVBO;

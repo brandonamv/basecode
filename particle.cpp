@@ -67,12 +67,11 @@ void ParticleGenerator::Draw(glm::mat4 view, glm::mat4 proj)
                 glm::scale(glm::mat4(1.0f), glm::vec3(.5f, .5f, .5f)*particle.scale);
             glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
             glUniform4f(colorLoc, particle.Color.x, particle.Color.y, particle.Color.z, particle.Color.w);
-            glBindVertexArray(this->VAO);
-            glDrawArrays(GL_TRIANGLES, 0, this->size/ sizeof(GLfloat));
+            glBindVertexArray(this->pointVAO);
+            glDrawArrays(GL_POINTS, 0, this->size/ sizeof(GLfloat));
+            glPointSize(10.0f);
         }
     }
-    // don't forget to reset to default blending mode
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 int ParticleGenerator::partition(std::vector<Particle>& arr, int start, int end)
@@ -139,16 +138,17 @@ void ParticleGenerator::init()
     projLoc = glGetUniformLocation(this->shader.Program, "projection");
     modelLoc = glGetUniformLocation(this->shader.Program, "model");
     colorLoc = glGetUniformLocation(this->shader.Program, "Color");
-   
-    glGenVertexArrays(1, &this->VAO);
-    glBindVertexArray(this->VAO);
+    sizeLoc = glGetUniformLocation(this->shader.Program, "size");
+    GLfloat point[] = { .0f,.0f,.0f };
     
-    glGenBuffers(1, &this->VBO);
+    glGenVertexArrays(1, &this->pointVAO);
+    glBindVertexArray(this->pointVAO);
     
+    glGenBuffers(1, &this->pointVBO);
+    this->size = sizeof(point);
     // fill mesh buffer
-    size = circle.size()*sizeof(GLfloat*);
-    glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
-    glBufferData(GL_ARRAY_BUFFER, this->size, circle.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, this->pointVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(point), point, GL_STATIC_DRAW);
     // set mesh attributes
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);
