@@ -1,6 +1,5 @@
 
 #include <main.h>
-
 // GLEW
 // #ifdef GLEW_STATIC
 // #  define GLEWAPI extern
@@ -54,11 +53,9 @@ int main(){
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     glfwWindowHint(GLFW_SAMPLES, 4);
-
     // Create a GLFWwindow object that we can use for GLFW's functions
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Proyecto 1 CG2 - UCV", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Proyecto B CG2 - UCV", glfwGetPrimaryMonitor(),  nullptr);
     glfwMakeContextCurrent(window);
-
     // Set the required callback functions
     glfwSetKeyCallback(window, key_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
@@ -70,7 +67,6 @@ int main(){
     // Initialize GLEW to setup the OpenGL Function pointers
     glewInit();
     // OpenGL options
-    glEnable(GL_STENCIL_TEST);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_POLYGON_OFFSET_FILL);
     glEnable(GL_BLEND);
@@ -79,7 +75,8 @@ int main(){
 
     // Build and compile our shader program
     Shader basic_shader("color_shader.vs", "color_shader.frag");
-    ParticleGenerator *particle_system=new ParticleGenerator(Shader("particle_shader.vs", "particle_shader.frag"), 500);
+    Shader particle_shader("particle_shader.vs", "particle_shader.frag");
+    std::vector<ParticleGenerator*> particle_system;
     // Initialize ImGUI
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -89,17 +86,21 @@ int main(){
     ImGui_ImplOpenGL3_Init("#version 330");
     
     // Variables to be changed in the ImGUI window
-    static bool my_tool_active;
-    static bool filledTriangle;
-    static bool vertexPoint;
-    static bool lineTriangle;
-    static bool fpsShow;
-    static bool antialliasing;
+    static bool menu_general;
+    static bool opc_fps;
+    static bool opc_antialliasing;
+    static bool opc_gravity;
+    static bool opc_blending;
+    static bool opc_deph_sort;
+    float opc_background_color[3] = { 0.0f, 1.0f, 1.0f };
+    float opc_camera_speed = 5.0f;
+    float opc_anim_speed = 1.0f;
+
+    //menu creacion particulas
+    static bool menu_particle;
+
     float sx,sy,sz;
     float* objColor = nullptr, * boundingColor;
-
-    // Game loop
-    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 
     basic_shader.Use();
@@ -107,20 +108,9 @@ int main(){
     GLint viewLoc = glGetUniformLocation(basic_shader.Program, "view");
     GLint projLoc = glGetUniformLocation(basic_shader.Program, "projection");
     cam = new camera(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    float cameraSpeed=5.0f;
-    //string bombillo = openFile();
 
-    float ambient_color[3]{ 1.0f,1.0f,1.0f };
-    float difuse_color[3]{ 1.0f,1.0f,1.0f };
-    float specular_color[3]{ 1.0f,1.0f,1.0f };
-    float intensity=5.0f;
-    /*if (!bombillo.empty())
-    {
-        objects.push_back(new obj(bombillo));
-        actual = objects.back();
-        actual->traslateObj(cam->getcameraFront().x, cam->getcameraFront().y, cam->getcameraFront().z);
-        actual->setTam(0.5f, 0.5f, 0.5f);
-    }*/
+
+    
     while (!glfwWindowShouldClose(window))
     {
 
@@ -129,7 +119,6 @@ int main(){
         GLfloat currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
-        particle_system->Update(deltaTime, 100, glm::vec3(1.0f, 1.0f, 1.0f));  
         int w, h;
         glfwGetFramebufferSize(window, &w, &h);
 
@@ -141,8 +130,8 @@ int main(){
         do_movement(deltaTime);
 
         // Clear the colorbuffer
-        glClearColor(backgroundColor[0], backgroundColor[1], backgroundColor[2], backgroundColor[3]);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        glClearColor(opc_background_color[0], opc_background_color[1], opc_background_color[2], 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         //// Tell OpenGL a new frame is about to begin
         ImGui_ImplOpenGL3_NewFrame();
@@ -150,7 +139,7 @@ int main(){
         ImGui::NewFrame();
 
         //// ImGUI window creation
-        ImGui::Begin("Menu", &my_tool_active, ImGuiWindowFlags_MenuBar);
+        ImGui::Begin("General Menu", &menu_general, ImGuiWindowFlags_MenuBar);
         if (ImGui::BeginMenuBar())
         {
             if (ImGui::BeginMenu("File"))
@@ -173,27 +162,11 @@ int main(){
             ImGui::EndMenuBar();
         }
         //// Text that appears in the window
-        ImGui::ColorEdit4("BackGround Color", backgroundColor);
-        /*ImGui::Checkbox("Back Face Culling", &backFaceCulling);
-        if (backFaceCulling)
-        {
-            glEnable(GL_CULL_FACE);
-            glCullFace(GL_BACK);
-            glFrontFace(GL_CW);
-        }
-        else {
-            glDisable(GL_CULL_FACE);
-        }
-        ImGui::Checkbox("Z-Buffer", &zBuffer);
-        if (zBuffer)
-        {
-            glEnable(GL_DEPTH_TEST);
-        }
-        else {
-            glDisable(GL_DEPTH_TEST);
-        }*/
-        ImGui::Checkbox("Antialliasing", &antialliasing);
-        if (antialliasing)
+        ImGui::Text("Bacground Color");
+        ImGui::ColorEdit3("col_bg", opc_background_color);
+
+        ImGui::Checkbox("Antialliasing", &opc_antialliasing);
+        if (opc_antialliasing)
         {
             glEnable(GL_MULTISAMPLE);
         }
@@ -212,9 +185,10 @@ int main(){
             }
         }
         
-        ImGui::Checkbox("FPS", &fpsShow);
-        if (fpsShow)
+        ImGui::Checkbox("FPS", &opc_fps);
+        if (opc_fps)
         {
+            
             ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             float samples[3000]{};
             for (int n = 0; n < 3000; n++)
@@ -222,8 +196,41 @@ int main(){
             ImGui::PlotHistogram("Samples", samples, 3000, 0, NULL, 0.0f, 100.0f, ImVec2(300, 50));
         }
         ImGui::Separator();
-        ImGui::SliderFloat("Camera Speed", &cameraSpeed, 0.1f, 30.0f);
-        cam->setcameraSpeed(cameraSpeed,deltaTime);
+        ImGui::Text("Camera Speed");
+        ImGui::SliderFloat("s_cam", &opc_camera_speed, 0.1f, 30.0f);
+        cam->setcameraSpeed(opc_camera_speed,deltaTime);
+        ImGui::Separator();
+        ImGui::Checkbox("Gravity", &opc_gravity);
+        ImGui::Checkbox("Blending", &opc_blending);
+        if (opc_blending)
+        {
+            glEnable(GL_BLEND);
+            ImGui::Checkbox("Deph Sort", &opc_deph_sort);
+            if (opc_deph_sort)
+            {
+                glEnable(GL_DEPTH_TEST);
+
+            }
+            else {
+                glDisable(GL_DEPTH_TEST);
+            }
+        }
+        else {
+            glDisable(GL_BLEND);
+        }
+
+        if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+            particle_system.push_back(new ParticleGenerator());
+
+        if (!particle_system.empty())
+        {
+            ImGui::Separator();
+            ImGui::Text("Animation Speed");
+            ImGui::SliderFloat("s_ptcle", &opc_anim_speed, 0.1f, 10.0f);
+
+        }
+
+
         if (actual)
         {
             ImGui::Separator();
@@ -243,22 +250,14 @@ int main(){
         ImGui::End();
         glm::mat4 view = cam->getView();
         glm::mat4 projection = glm::perspective(60.0f * 3.14159f / 180.0f, float(w) / float(h), 0.01f, 100.0f);
-        //menu luces
-        ImGui::Begin("Lights Menu", &my_tool_active, ImGuiWindowFlags_MenuBar);
+       
         
-        particle_system->Draw(view, projection);
         
         basic_shader.Use();
-        
-        ImGui::End();
-        // Create camera transformations
-        
-
         // Pass the matrices to the shader
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
-        
-        
+                
         if (!objects.empty())
         {
             for (const auto &x:objects)
@@ -268,7 +267,15 @@ int main(){
             }
         }
         
-
+        particle_shader.Use();
+        if (!particle_system.empty())
+        {
+            for (const auto& x : particle_system)
+            {
+                x->Update(deltaTime, 100, glm::vec3(1.0f, 1.0f, 1.0f));
+                x->Draw(particle_shader,view, projection);
+            }
+        }
         // Renders the ImGUI elements
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

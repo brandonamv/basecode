@@ -3,8 +3,7 @@
 #include "particle.h"
 #include <math.h>
 # define MY_PI 3.14159265358979323846
-ParticleGenerator::ParticleGenerator(Shader shader, unsigned int amount)
-    : shader(shader), amount(amount)
+ParticleGenerator::ParticleGenerator()
 {
     this->init();
 }
@@ -46,9 +45,13 @@ void ParticleGenerator::Update(float dt, unsigned int newParticles, glm::vec3 of
 }
 
 // render all particles
-void ParticleGenerator::Draw(glm::mat4 view, glm::mat4 proj)
+void ParticleGenerator::Draw(Shader particle_shader, glm::mat4 view, glm::mat4 proj)
 {
-    this->shader.Use();
+    viewLoc = glGetUniformLocation(particle_shader.Program, "view");
+    projLoc = glGetUniformLocation(particle_shader.Program, "projection");
+    modelLoc = glGetUniformLocation(particle_shader.Program, "model");
+    colorLoc = glGetUniformLocation(particle_shader.Program, "Color");
+    sizeLoc = glGetUniformLocation(particle_shader.Program, "size");
     
     // Pass the matrices to the shader
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
@@ -133,12 +136,6 @@ void ParticleGenerator::quickSort(std::vector<Particle>& arr, int start, int end
 
 void ParticleGenerator::init()
 {
-    this->shader.Use();
-    viewLoc = glGetUniformLocation(this->shader.Program, "view");
-    projLoc = glGetUniformLocation(this->shader.Program, "projection");
-    modelLoc = glGetUniformLocation(this->shader.Program, "model");
-    colorLoc = glGetUniformLocation(this->shader.Program, "Color");
-    sizeLoc = glGetUniformLocation(this->shader.Program, "size");
     GLfloat point[] = { .0f,.0f,.0f };
     
     glGenVertexArrays(1, &this->pointVAO);
@@ -152,7 +149,7 @@ void ParticleGenerator::init()
     // set mesh attributes
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);
-
+    this->amount = 500;
     // create this->amount default particle instances
     for (unsigned int i = 0; i < this->amount; ++i) {
         Particle temp;

@@ -25,11 +25,21 @@ class ParticleGenerator
 {
 public:
     // constructor
-    ParticleGenerator(Shader shader, unsigned int amount);
+    ParticleGenerator();
     // update all particles
     void Update(float dt, unsigned int newParticles, glm::vec3 offset = glm::vec3(0.0f, 0.0f,.0f));
     // render all particles
-    void Draw(glm::mat4 view, glm::mat4 proj);
+    void Draw(Shader particle_shader, glm::mat4 view, glm::mat4 proj);
+
+    void setColor(glm::vec4 init, glm::vec4 mid, glm::vec4 fin);
+    glm::vec4 getInitColor();
+    glm::vec4 getMidColor();
+    glm::vec4 getFinColor();
+    void setRGBvariance();
+
+    void setMinMax(glm::vec3 min, glm::vec3 max);
+    glm::vec3 getMin();
+    glm::vec3 getMax();
 private:
 
     int partition(std::vector<Particle>& arr, int start, int end);
@@ -37,15 +47,14 @@ private:
     // state
     std::vector<Particle> particles;
     //particles options
-    glm::vec3 min, max; //area de spawn
+    glm::vec3 spawn_min, spawn_max; //area de spawn
     glm::vec4 color_init, color_mid, color_fin; //colores
-    int color_variance; //varianza color
+    glm::vec4 color_variance; //varianza color
     float mass; //masa de la particula
     unsigned int amount;
     // render state
     GLint viewLoc, projLoc, modelLoc;
     GLint colorLoc, sizeLoc;
-    Shader shader;
     int size;
     GLuint pointVAO,pointVBO, quadVAO, quadVBO;
     // initializes buffer and vertex attributes

@@ -59,8 +59,7 @@ char const* lTheOpenFileName;
 char const* lFilterPatterns[2] = { "*.obj" };
 FILE* lIn;
 
-//scene atributes
-float backgroundColor[4] = {0.0f, 1.0f, 1.0f,1.0f};
+
 //obj atributes
 std::vector<obj*> objects;
 obj* actual=nullptr;
