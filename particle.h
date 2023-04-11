@@ -25,7 +25,7 @@ class ParticleGenerator
 {
 public:
     // constructor
-    ParticleGenerator();
+    ParticleGenerator(int max);
     // update all particles
     void Update(float dt, unsigned int newParticles, glm::vec3 offset = glm::vec3(0.0f, 0.0f,.0f));
     // render all particles
@@ -40,6 +40,9 @@ public:
     void setMinMax(glm::vec3 min, glm::vec3 max);
     glm::vec3 getMin();
     glm::vec3 getMax();
+
+    void setMaxParticles(int n);
+    int getMaxParticles();
 private:
 
     int partition(std::vector<Particle>& arr, int start, int end);
@@ -47,7 +50,7 @@ private:
     // state
     std::vector<Particle> particles;
     //particles options
-    glm::vec3 spawn_min, spawn_max; //area de spawn
+    glm::vec3 spawn_min=glm::vec3(.0f), spawn_max = glm::vec3(.0f); //area de spawn
     glm::vec4 color_init, color_mid, color_fin; //colores
     glm::vec4 color_variance; //varianza color
     float mass; //masa de la particula
@@ -56,9 +59,9 @@ private:
     GLint viewLoc, projLoc, modelLoc;
     GLint colorLoc, sizeLoc;
     int size;
-    GLuint pointVAO,pointVBO, quadVAO, quadVBO;
+    GLuint pointVAO,pointVBO, quadVAO, quadVBO, boundingVAO, boundingVBO;
     // initializes buffer and vertex attributes
-    void init();
+    void init(int max);
     // returns the first Particle index that's currently unused e.g. Life <= 0.0f or 0 if no particle is currently inactive
     unsigned int firstUnusedParticle();
     // respawns particle

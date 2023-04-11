@@ -205,6 +205,47 @@ int main(){
         if (opc_blending)
         {
             glEnable(GL_BLEND);
+            const char* items[] = { "GL_ZERO", "GL_ONE", "GL_SRC_COLOR", "GL_ONE_MINUS_SRC_COLOR", "GL_DST_COLOR", "GL_ONE_MINUS_DST_COLOR", "GL_SRC_ALPHA", "GL_ONE_MINUS_SRC_ALPHA", "GL_DST_ALPHA", "GL_ONE_MINUS_DST_ALPHA", "GL_CONSTANT_COLOR", "GL_ONE_MINUS_CONSTANT_COLOR", "GL_CONSTANT_ALPHA", "GL_ONE_MINUS_CONSTANT_ALPHA" };
+            static const char* current_item = "GL_ONE";
+            static const char* current_item1 = "GL_ONE";
+            GLenum blend1[] = { GL_ZERO, GL_ONE, GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR, GL_DST_COLOR, GL_ONE_MINUS_DST_COLOR, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_DST_ALPHA, GL_ONE_MINUS_DST_ALPHA, GL_CONSTANT_COLOR, GL_ONE_MINUS_CONSTANT_COLOR, GL_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_ALPHA };
+            int b1=1, b2=1;
+            ImGui::Text("Blend Function 1");
+            if (ImGui::BeginCombo("bFunc1", current_item)) // The second parameter is the label previewed before opening the combo.
+            {
+                for (int n = 0; n < IM_ARRAYSIZE(items); n++)
+                {
+                    bool is_selected = (current_item == items[n]); // You can store your selection however you want, outside or inside your objects
+                    if (ImGui::Selectable(items[n], is_selected))
+                        current_item = items[n];
+                    if (is_selected)
+                        ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+                    
+                }
+                ImGui::EndCombo();
+            }
+            ImGui::Text("Blend Function 2");
+            if (ImGui::BeginCombo("bFunc2", current_item1)) // The second parameter is the label previewed before opening the combo.
+            {
+                for (int n = 0; n < IM_ARRAYSIZE(items); n++)
+                {
+                    bool is_selected = (current_item1 == items[n]); // You can store your selection however you want, outside or inside your objects
+                    if (ImGui::Selectable(items[n], is_selected))
+                        current_item1 = items[n];
+                    if (is_selected)
+                        ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+                    
+                }
+                ImGui::EndCombo();
+            }
+            for (int i = 0; i < IM_ARRAYSIZE(items); i++)
+            {
+                if (current_item == items[i])
+                    b1 = i;
+                if (current_item1 == items[i])
+                    b2 = i;
+            }
+            glBlendFunc(blend1[b1],blend1[b2]);
             ImGui::Checkbox("Deph Sort", &opc_deph_sort);
             if (opc_deph_sort)
             {

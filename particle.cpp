@@ -3,9 +3,9 @@
 #include "particle.h"
 #include <math.h>
 # define MY_PI 3.14159265358979323846
-ParticleGenerator::ParticleGenerator()
+ParticleGenerator::ParticleGenerator(int max)
 {
-    this->init();
+    this->init(max);
 }
 
 void ParticleGenerator::Update(float dt, unsigned int newParticles, glm::vec3 offset)
@@ -57,7 +57,6 @@ void ParticleGenerator::Draw(Shader particle_shader, glm::mat4 view, glm::mat4 p
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
     // use additive blending to give it a 'glow' effect
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     quickSort(particles, 0, particles.size()-1);
     for (Particle particle : this->particles)
     {
@@ -79,7 +78,7 @@ void ParticleGenerator::Draw(Shader particle_shader, glm::mat4 view, glm::mat4 p
 
 int ParticleGenerator::partition(std::vector<Particle>& arr, int start, int end)
 {
-    // assuming last element as pivotElement
+    // assuspawn_ming last element as pivotElement
     int index = 0, pivotIndex{};
     Particle pivotElement = arr[end];
     std::vector<Particle> temp(end - start + 1); // making an array whose size is equal to current partition range...
@@ -134,7 +133,7 @@ void ParticleGenerator::quickSort(std::vector<Particle>& arr, int start, int end
     return;
 }
 
-void ParticleGenerator::init()
+void ParticleGenerator::init(int max)
 {
     GLfloat point[] = { .0f,.0f,.0f };
     
@@ -149,7 +148,44 @@ void ParticleGenerator::init()
     // set mesh attributes
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);
-    this->amount = 500;
+
+    GLfloat bounding[] = {
+        spawn_min.x,spawn_max.y,spawn_max.z,
+        spawn_max.x,spawn_max.y,spawn_max.z,
+        spawn_min.x,spawn_min.y,spawn_max.z,
+        spawn_max.x,spawn_min.y,spawn_max.z,
+        spawn_max.x,spawn_min.y,spawn_max.z,
+        spawn_max.x,spawn_max.y,spawn_max.z,
+        spawn_min.x,spawn_min.y,spawn_max.z,
+        spawn_min.x,spawn_max.y,spawn_max.z,//cuadrado frontal
+        spawn_max.x,spawn_max.y,spawn_min.z,
+        spawn_min.x,spawn_max.y,spawn_min.z,
+        spawn_max.x,spawn_max.y,spawn_min.z,
+        spawn_max.x,spawn_min.y,spawn_min.z,
+        spawn_min.x,spawn_min.y,spawn_min.z,
+        spawn_max.x,spawn_min.y,spawn_min.z,
+        spawn_min.x,spawn_min.y,spawn_min.z,
+        spawn_min.x,spawn_max.y,spawn_min.z, //cuadrado trasero
+        spawn_max.x,spawn_max.y,spawn_max.z,
+        spawn_max.x,spawn_max.y,spawn_min.z,
+        spawn_max.x,spawn_min.y,spawn_max.z,
+        spawn_max.x,spawn_min.y,spawn_min.z,
+        spawn_min.x,spawn_max.y,spawn_max.z,
+        spawn_min.x,spawn_max.y,spawn_min.z,
+        spawn_min.x,spawn_min.y,spawn_max.z,
+        spawn_min.x,spawn_min.y,spawn_min.z
+    };
+    glGenVertexArrays(1, &boundingVAO);
+    // 1. bind Vertex Array Object
+    glBindVertexArray(boundingVAO);
+    // 2. copy our vertices array in a buffer for OpenGL to use
+    glGenBuffers(1, &boundingVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, boundingVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat*) * 72, bounding, GL_STATIC_DRAW);
+    // 3. then set our vertex attributes pointers
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
+    glEnableVertexAttribArray(0);
+
     // create this->amount default particle instances
     for (unsigned int i = 0; i < this->amount; ++i) {
         Particle temp;
