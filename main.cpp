@@ -54,7 +54,7 @@ int main(){
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     glfwWindowHint(GLFW_SAMPLES, 4);
     // Create a GLFWwindow object that we can use for GLFW's functions
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Proyecto B CG2 - UCV", glfwGetPrimaryMonitor(),  nullptr);
+    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Proyecto B CG2 - UCV", /*glfwGetPrimaryMonitor()*/NULL,  nullptr);
     glfwMakeContextCurrent(window);
     // Set the required callback functions
     glfwSetKeyCallback(window, key_callback);
@@ -98,6 +98,26 @@ int main(){
 
     //menu creacion particulas
     static bool menu_particle;
+    float min_box[3] = { .0f,.0f,.0f };
+    float max_box[3] = { .0f,.0f,.0f };
+    float color_ini[4] = { .0f,.0f,.0f, 1.0f };
+    float color_mid[4] = { .0f,.0f,.0f, .5f };
+    float color_fin[4] = { .0f,.0f,.0f, .0f };
+    float color_variance[3] = {.0f,.0f,.0f};
+    int particles_generation = 1;
+    int particles_generation_variance = 1;
+    float particles_life = 1.0f;
+    float particles_life_variance = 1.0f;
+    vec3 particles_direction(.0f,.0f,.0f);
+    float particles_direction_variance[3] = { .0f,.0f, .0f };
+    float particles_speed = .01f;
+    float particles_speed_variance = .01f;
+    static bool particles_texture = false;
+    int particles_max = 1;
+    float particles_size_ini = .1f;
+    float particles_size_ini_variance = 3.0f;
+    float particles_size_fin = .1f;
+    float particles_size_fin_variance = 3.0f;
 
     float sx,sy,sz;
     float* objColor = nullptr, * boundingColor;
@@ -201,7 +221,8 @@ int main(){
         cam->setcameraSpeed(opc_camera_speed,deltaTime);
         ImGui::Separator();
         ImGui::Checkbox("Gravity", &opc_gravity);
-        ImGui::Checkbox("Blending", &opc_blending);
+        ImGui::Checkbox("Blending", &opc_blending);/*
+        ImGui::gizmo3D("guizmo", light);*/
         if (opc_blending)
         {
             glEnable(GL_BLEND);

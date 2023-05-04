@@ -72,6 +72,9 @@
     <ClInclude Include="particle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="imgui\imGuIZMOquat.h">
+      <Filter>Header Files\imgui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -106,6 +109,9 @@
     </ClCompile>
     <ClCompile Include="particle.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\imGuIZMOquat.cpp">
+      <Filter>Source Files\imgui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

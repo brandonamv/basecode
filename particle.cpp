@@ -3,9 +3,9 @@
 #include "particle.h"
 #include <math.h>
 # define MY_PI 3.14159265358979323846
-ParticleGenerator::ParticleGenerator(int max)
+ParticleGenerator::ParticleGenerator()
 {
-    this->init(max);
+    this->init();
 }
 
 void ParticleGenerator::Update(float dt, unsigned int newParticles, glm::vec3 offset)
@@ -133,7 +133,7 @@ void ParticleGenerator::quickSort(std::vector<Particle>& arr, int start, int end
     return;
 }
 
-void ParticleGenerator::init(int max)
+void ParticleGenerator::init()
 {
     GLfloat point[] = { .0f,.0f,.0f };
     

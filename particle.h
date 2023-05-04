@@ -25,7 +25,7 @@ class ParticleGenerator
 {
 public:
     // constructor
-    ParticleGenerator(int max);
+    ParticleGenerator();
     // update all particles
     void Update(float dt, unsigned int newParticles, glm::vec3 offset = glm::vec3(0.0f, 0.0f,.0f));
     // render all particles
@@ -61,7 +61,7 @@ private:
     int size;
     GLuint pointVAO,pointVBO, quadVAO, quadVBO, boundingVAO, boundingVBO;
     // initializes buffer and vertex attributes
-    void init(int max);
+    void init();
     // returns the first Particle index that's currently unused e.g. Life <= 0.0f or 0 if no particle is currently inactive
     unsigned int firstUnusedParticle();
     // respawns particle
