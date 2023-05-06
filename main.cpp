@@ -74,8 +74,8 @@ int main(){
     glPolygonOffset(1.0, 1.0);
 
     // Build and compile our shader program
-    Shader basic_shader("color_shader.vs", "color_shader.frag");
-    Shader particle_shader("particle_shader.vs", "particle_shader.frag");
+    Shader basic_shader("color_shader.vs", "", "color_shader.frag");
+    Shader particle_shader("particle_shader.vs", "particle_shader.gs", "particle_shader.frag");
     std::vector<ParticleGenerator*> particle_system;
     // Initialize ImGUI
     IMGUI_CHECKVERSION();
@@ -137,6 +137,7 @@ int main(){
         
         // Calculate deltatime of current frame
         GLfloat currentFrame = glfwGetTime();
+        
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
         int w, h;

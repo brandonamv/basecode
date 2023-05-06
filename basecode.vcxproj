@@ -184,6 +184,7 @@
     <None Include="color_shader.frag" />
     <None Include="color_shader.vs" />
     <None Include="particle_shader.frag" />
+    <None Include="particle_shader.gs" />
     <None Include="particle_shader.vs" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
