@@ -58,7 +58,7 @@ private:
     glm::vec4 color_ini_variance = glm::vec4(.1f), color_mid_variance = glm::vec4(.1f), color_fin_variance = glm::vec4(.1f);; //varianza color
     glm::vec3 direction = glm::vec3(.0f,1.0f,.0f);
     glm::vec3 direction_variance = glm::vec3(.1f);
-    float speed = 2.0f;
+    float speed = .5f;
     float speed_variance = 1.0f;
     float size_ini = 10.0f, size_fin = .0f;
     float size_ini_var = 1.0f, size_fin_var = 1.0f;
@@ -68,9 +68,9 @@ private:
     float lifetime = 2.0f;
     float lifetime_var = 0.1f;
     //menu options
-    bool opt_mass = true;
+    bool opt_mass = false;
     bool opt_blending = false;
-    int max_particles = 1;
+    int max_particles = 10;
 
     // render state
     GLuint Program;

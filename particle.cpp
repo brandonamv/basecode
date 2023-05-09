@@ -7,16 +7,21 @@ ParticleGenerator::ParticleGenerator()
 {
     this->init();
 }
-
+float secondCounter = .0f;
 void ParticleGenerator::Update(float dt, unsigned int newParticles, glm::vec3 offset)
 {
     // add new particles 
-    for (unsigned int i = 0; i < newParticles; ++i)
+    secondCounter += dt;
+    if (secondCounter >=1.0f)
     {
-        int unusedParticle = this->firstUnusedParticle();
-        if (unusedParticle>=0)
-            this->respawnParticle(this->particles[unusedParticle], offset);
-        
+        for (unsigned int i = 0; i < newParticles; ++i)
+        {
+            int unusedParticle = this->firstUnusedParticle();
+            if (unusedParticle >= 0)
+                this->respawnParticle(this->particles[unusedParticle], offset);
+
+        }
+        secondCounter = .0f;
     }
     // update all particles
     for (unsigned int i = 0; i < this->max_particles; ++i)

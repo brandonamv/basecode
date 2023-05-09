@@ -335,7 +335,7 @@ int main(){
         {
             for (const auto& x : particle_system)
             {
-                x->Update(deltaTime, particles_max, glm::vec3(1.0f, 1.0f, 1.0f));
+                x->Update(deltaTime, 2, glm::vec3(1.0f, 1.0f, 1.0f));
                 x->Draw(particle_shader,view, projection);
             }
         }
