@@ -14,13 +14,15 @@ void ParticleGenerator::Update(float dt, unsigned int newParticles, glm::vec3 of
     for (unsigned int i = 0; i < newParticles; ++i)
     {
         int unusedParticle = this->firstUnusedParticle();
-        this->respawnParticle(this->particles[unusedParticle], offset);
+        if (unusedParticle>=0)
+            this->respawnParticle(this->particles[unusedParticle], offset);
+        
     }
     // update all particles
     for (unsigned int i = 0; i < this->max_particles; ++i)
     {
         Particle& p = this->particles[i];
-        p.Life -= dt; // reduce life
+        p.Life -= dt*anim_speed; // reduce life
         if (p.Life > 0.0f)
         {	// particle is alive, thus update
             
@@ -30,7 +32,8 @@ void ParticleGenerator::Update(float dt, unsigned int newParticles, glm::vec3 of
             p.Position += p.Direction * p.speed;
             if (this->opt_mass)
             {
-                p.Position.y -= p.mass*9.8f;
+                //p.Position.y -= p.mass*9.8f;
+                p.Position.y -= p.speed+ p.mass * 9.8f*(p.tLife-p.Life);
             }
 
         }
@@ -45,12 +48,12 @@ void ParticleGenerator::Draw(Shader particle_shader, glm::mat4 view, glm::mat4 p
     modelLoc = glGetUniformLocation(particle_shader.Program, "model");
     colorLoc = glGetUniformLocation(particle_shader.Program, "Color");
     sizeLoc = glGetUniformLocation(particle_shader.Program, "size");
-    
+    pointLoc = glGetUniformLocation(particle_shader.Program, "point");
     // Pass the matrices to the shader
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
     // use additive blending to give it a 'glow' effect
-    quickSort(particles, 0, particles.size()-1);
+    //quickSort(particles, 0, particles.size()-1);
     for (Particle particle : this->particles)
     {
         if (particle.Life > 0.0f)
@@ -62,9 +65,10 @@ void ParticleGenerator::Draw(Shader particle_shader, glm::mat4 view, glm::mat4 p
                 glm::scale(glm::mat4(1.0f), glm::vec3(.5f, .5f, .5f)*particle.scale);
             glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
             glUniform4f(colorLoc, particle.Color.x, particle.Color.y, particle.Color.z, particle.Color.w);
+            glUniform1d(pointLoc, 0);
             glBindVertexArray(this->pointVAO);
             glDrawArrays(GL_POINTS, 0, this->size/ sizeof(GLfloat));
-            glPointSize(10.0f);
+            glPointSize(particle.scale);
         }
     }
 }
@@ -208,45 +212,59 @@ unsigned int ParticleGenerator::firstUnusedParticle()
     }
     // all particles are taken, override the first one (note that if it repeatedly hits this case, more particles should be reserved)
     lastUsedParticle = 0;
-    return 0;
+    return -1;
 }
 
 void ParticleGenerator::respawnParticle(Particle& particle, glm::vec3 offset)
 {
+    glm::vec3 temp3;
+    
     int pivot = rand();
-    particle.scale =  this->size_ini + (iterator[rand()%1] * (fmod(pivot, this->size_ini_var)));
-    particle.scaleFin = this->size_fin + (iterator[rand() % 1] * (fmod(pivot, this->size_fin_var)));
+    float temp = this->size_ini + iterator[rand() % 2] * fmod(pivot, this->size_ini_var);
+    if (temp <= 0)temp = .1f;
+    particle.scale = temp;
+    particle.scaleFin = this->size_fin + iterator[rand() % 2] * fmod(pivot, this->size_fin_var);
     particle.Position = glm::vec3(
         fmod(pivot, this->spawn_max.x - this->spawn_min.x + 1) + this->spawn_min.x,
         fmod(pivot, this->spawn_max.y - this->spawn_min.y + 1) + this->spawn_min.y,
         fmod(pivot, this->spawn_max.z - this->spawn_min.z + 1) + this->spawn_min.z
     );
-    particle.Color = glm::vec4(
-        this->color_ini.x + (iterator[rand() % 1] * (fmod(pivot, this->color_ini_variance.x))),
-        this->color_ini.y + (iterator[rand() % 1] * (fmod(pivot, this->color_ini_variance.y))),
-        this->color_ini.z + (iterator[rand() % 1] * (fmod(pivot, this->color_ini_variance.z))),
-        this->color_ini.w + (iterator[rand() % 1] * (fmod(pivot, this->color_ini_variance.w)))
-    );
-    particle.midColor = glm::vec4(
-        this->color_mid.x + (iterator[rand() % 1] * (fmod(pivot, this->color_mid_variance.x))),
-        this->color_mid.y + (iterator[rand() % 1] * (fmod(pivot, this->color_mid_variance.y))),
-        this->color_mid.z + (iterator[rand() % 1] * (fmod(pivot, this->color_mid_variance.z))),
-        this->color_mid.w + (iterator[rand() % 1] * (fmod(pivot, this->color_mid_variance.w)))
-    );
-    particle.finColor = glm::vec4(
-        this->color_fin.x + (iterator[rand() % 1] * (fmod(pivot, this->color_fin_variance.x))),
-        this->color_fin.y + (iterator[rand() % 1] * (fmod(pivot, this->color_fin_variance.y))),
-        this->color_fin.z + (iterator[rand() % 1] * (fmod(pivot, this->color_fin_variance.z))),
-        this->color_fin.w + (iterator[rand() % 1] * (fmod(pivot, this->color_fin_variance.w)))
-    );
-    particle.Life = this->lifetime + (iterator[rand() % 1] * (fmod(pivot, this->lifetime_var)));
+    
+    particle.Color = colorVariance(color_ini,color_ini_variance);
+    
+    particle.midColor = colorVariance(color_mid, color_mid_variance);
+
+    particle.finColor = colorVariance(color_fin, color_fin_variance);
+
+    particle.Life = this->lifetime + iterator[rand() % 2] * fmod(pivot, this->lifetime_var);
     particle.tLife = particle.Life;
     particle.mLife = particle.Life / 2;
     particle.Direction = glm::vec3(
-        this->direction.x + iterator[rand()%1] * (fmod(pivot, this->direction_variance.x)),
-        this->direction.y + iterator[rand()%1] * (fmod(pivot, this->direction_variance.y)),
-        this->direction.z + iterator[rand()%1] * (fmod(pivot, this->direction_variance.z))
+        this->direction.x + iterator[rand() % 2] * fmod(pivot, this->direction_variance.x),
+        this->direction.y + iterator[rand() % 2] * fmod(pivot, this->direction_variance.y),
+        this->direction.z + iterator[rand() % 2] * fmod(pivot, this->direction_variance.z)
     );
-    particle.speed = this->speed + iterator[rand()%1] * (fmod(pivot, this->speed_variance));
-    particle.mass = this->mass + iterator[rand()%1] * (fmod(pivot, this->mass_variance));
+    glm::normalize(particle.Direction);
+    particle.speed = this->speed + iterator[rand() % 2] * fmod(pivot, this->speed_variance);
+    particle.mass = this->mass + iterator[rand() % 2] * fmod(pivot, this->mass_variance);
+}
+
+glm::vec4 ParticleGenerator::colorVariance(glm::vec4 color, glm::vec4 variance)
+{
+    int pivot = rand();
+    glm::vec4 temp4 = glm::vec4(
+        color.x + iterator[rand() % 2] * fmod(pivot, variance.x),
+        color.y + iterator[rand() % 2] * fmod(pivot, variance.y),
+        color.z + iterator[rand() % 2] * fmod(pivot, variance.z),
+        color.w + iterator[rand() % 2] * fmod(pivot, variance.w)
+    );
+    if (temp4.x > 1)temp4.x = 1.0f;
+    if (temp4.x < 0)temp4.x = .0f;
+    if (temp4.y > 1)temp4.y = 1.0f;
+    if (temp4.y < 0)temp4.y = .0f;
+    if (temp4.z > 1)temp4.z = 1.0f;
+    if (temp4.z < 0)temp4.z = .0f;
+    if (temp4.w > 1)temp4.w = 1.0f;
+    if (temp4.w < 0)temp4.w = .0f;
+    return temp4;
 }

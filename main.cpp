@@ -75,7 +75,7 @@ int main(){
 
     // Build and compile our shader program
     Shader basic_shader("color_shader.vs", "", "color_shader.frag");
-    Shader particle_shader("particle_shader.vs", "particle_shader.gs", "particle_shader.frag");
+    Shader particle_shader("particle_shader.vs", "", "particle_shader.frag");
     std::vector<ParticleGenerator*> particle_system;
     // Initialize ImGUI
     IMGUI_CHECKVERSION();
@@ -335,7 +335,7 @@ int main(){
         {
             for (const auto& x : particle_system)
             {
-                x->Update(deltaTime, 100, glm::vec3(1.0f, 1.0f, 1.0f));
+                x->Update(deltaTime, particles_max, glm::vec3(1.0f, 1.0f, 1.0f));
                 x->Draw(particle_shader,view, projection);
             }
         }

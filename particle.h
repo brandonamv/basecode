@@ -54,28 +54,28 @@ private:
     std::vector<Particle> particles;
     //particles options
     glm::vec3 spawn_min=glm::vec3(.0f), spawn_max = glm::vec3(.0f); //area de spawn
-    glm::vec4 color_ini = glm::vec4(.0f), color_mid = glm::vec4(.0f), color_fin = glm::vec4(1.0f); //colores
-    glm::vec4 color_ini_variance = glm::vec4(.0f), color_mid_variance = glm::vec4(.0f), color_fin_variance = glm::vec4(.0f);; //varianza color
-    glm::vec3 direction = glm::vec3(.0f);
-    glm::vec3 direction_variance = glm::vec3(.0f);
-    float speed = 1.0f;
+    glm::vec4 color_ini = glm::vec4(1.0f), color_mid = glm::vec4(.0f), color_fin = glm::vec4(.5f); //colores
+    glm::vec4 color_ini_variance = glm::vec4(.1f), color_mid_variance = glm::vec4(.1f), color_fin_variance = glm::vec4(.1f);; //varianza color
+    glm::vec3 direction = glm::vec3(.0f,1.0f,.0f);
+    glm::vec3 direction_variance = glm::vec3(.1f);
+    float speed = 2.0f;
     float speed_variance = 1.0f;
-    float size_ini = .0f, size_fin = 1.0f;
+    float size_ini = 10.0f, size_fin = .0f;
     float size_ini_var = 1.0f, size_fin_var = 1.0f;
-    float mass=1.0f; //masa de la particula
+    float mass=.1f; //masa de la particula
     float mass_variance = 1.0f;
     float anim_speed=1.0f ;
-    float lifetime = 1.0f;
+    float lifetime = 2.0f;
     float lifetime_var = 0.1f;
     //menu options
-    bool opt_mass = false;
+    bool opt_mass = true;
     bool opt_blending = false;
     int max_particles = 1;
 
     // render state
     GLuint Program;
     GLint viewLoc, projLoc, modelLoc;
-    GLint colorLoc, sizeLoc;
+    GLint colorLoc, sizeLoc, pointLoc;
     int size;
     GLuint pointVAO,pointVBO, quadVAO, quadVBO, boundingVAO, boundingVBO;
     // initializes buffer and vertex attributes
@@ -84,6 +84,9 @@ private:
     unsigned int firstUnusedParticle();
     // respawns particle
     void respawnParticle(Particle& particle, glm::vec3 offset = glm::vec3(0.0f, 0.0f,.0f));
+
+    glm::vec4 colorVariance(glm::vec4 color, glm::vec4 variance);
+    
 };
 
 #endif
