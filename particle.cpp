@@ -27,7 +27,7 @@ void ParticleGenerator::Update(float dt, unsigned int newParticles, glm::vec3 of
     for (unsigned int i = 0; i < this->max_particles; ++i)
     {
         Particle& p = this->particles[i];
-        p.Life -= dt*anim_speed; // reduce life
+        p.Life -= dt; // reduce life
         if (p.Life > 0.0f)
         {	// particle is alive, thus update
             
@@ -46,14 +46,28 @@ void ParticleGenerator::Update(float dt, unsigned int newParticles, glm::vec3 of
 }
 
 // render all particles
-void ParticleGenerator::Draw(Shader particle_shader, glm::mat4 view, glm::mat4 proj)
+void ParticleGenerator::Draw(Shader point_shader, Shader quad_shader, glm::mat4 view, glm::mat4 proj)
 {
-    viewLoc = glGetUniformLocation(particle_shader.Program, "view");
-    projLoc = glGetUniformLocation(particle_shader.Program, "projection");
-    modelLoc = glGetUniformLocation(particle_shader.Program, "model");
-    colorLoc = glGetUniformLocation(particle_shader.Program, "Color");
-    sizeLoc = glGetUniformLocation(particle_shader.Program, "size");
-    pointLoc = glGetUniformLocation(particle_shader.Program, "point");
+    
+    if (opt_point)
+    {
+        point_shader.Use();
+        viewLoc = glGetUniformLocation(point_shader.Program, "view");
+        projLoc = glGetUniformLocation(point_shader.Program, "projection");
+        modelLoc = glGetUniformLocation(point_shader.Program, "model");
+        colorLoc = glGetUniformLocation(point_shader.Program, "Color");
+        pointLoc = glGetUniformLocation(point_shader.Program, "point");
+    }
+    else {
+        quad_shader.Use();
+        viewLoc = glGetUniformLocation(quad_shader.Program, "view");
+        projLoc = glGetUniformLocation(quad_shader.Program, "projection");
+        modelLoc = glGetUniformLocation(quad_shader.Program, "model");
+        colorLoc = glGetUniformLocation(quad_shader.Program, "Color");
+        sizeLoc = glGetUniformLocation(quad_shader.Program, "size");
+        pointLoc = glGetUniformLocation(quad_shader.Program, "point");
+    }
+    
     // Pass the matrices to the shader
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
@@ -65,15 +79,24 @@ void ParticleGenerator::Draw(Shader particle_shader, glm::mat4 view, glm::mat4 p
         {
             glm::mat4 model =
                 glm::translate(glm::mat4(1.0f), particle.Position) *
-                glm::rotate(glm::mat4(1.0f), .0f, glm::vec3(0.0f, 1.0f, 0.0f)) *
-                glm::rotate(glm::mat4(1.0f), .0f, glm::vec3(1.0f, 0.0f, 0.0f)) *
-                glm::scale(glm::mat4(1.0f), glm::vec3(.5f, .5f, .5f)*particle.scale);
+                ident_matrix;
             glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
             glUniform4f(colorLoc, particle.Color.x, particle.Color.y, particle.Color.z, particle.Color.w);
-            glUniform1d(pointLoc, 0);
+            glUniform1i(pointLoc, opt_point);
+            if (!opt_point)
+                glUniform1f(sizeLoc, particle.size * particle.scale);
+            
             glBindVertexArray(this->pointVAO);
-            glDrawArrays(GL_POINTS, 0, this->size/ sizeof(GLfloat));
-            glPointSize(particle.scale);
+            if (opt_point)
+            {
+                glPointSize(particle.size * particle.scale);
+                glDrawArrays(GL_POINTS, 0, this->size/ sizeof(GLfloat));
+            }
+            else
+            {
+                glDrawArrays(GL_POINTS, 0, (this->size*4 ) / sizeof(GLfloat));
+            }
+            
         }
     }
 }
@@ -226,9 +249,11 @@ void ParticleGenerator::respawnParticle(Particle& particle, glm::vec3 offset)
     
     int pivot = rand();
     float temp = this->size_ini + iterator[rand() % 2] * fmod(pivot, this->size_ini_var);
-    if (temp <= 0)temp = .1f;
+    if (temp <= 0)temp = .000000001f;
     particle.scale = temp;
-    particle.scaleFin = this->size_fin + iterator[rand() % 2] * fmod(pivot, this->size_fin_var);
+    temp = this->size_fin + iterator[rand() % 2] * fmod(pivot, this->size_fin_var);
+    if (temp <= 0)temp = .000000001f;
+    particle.scaleFin = temp;
     particle.Position = glm::vec3(
         fmod(pivot, this->spawn_max.x - this->spawn_min.x + 1) + this->spawn_min.x,
         fmod(pivot, this->spawn_max.y - this->spawn_min.y + 1) + this->spawn_min.y,
@@ -241,7 +266,9 @@ void ParticleGenerator::respawnParticle(Particle& particle, glm::vec3 offset)
 
     particle.finColor = colorVariance(color_fin, color_fin_variance);
 
-    particle.Life = this->lifetime + iterator[rand() % 2] * fmod(pivot, this->lifetime_var);
+    temp = this->lifetime + iterator[rand() % 2] * fmod(pivot, this->lifetime_var);
+    if (temp <= 0)temp = .000000001f;
+    particle.Life = temp;
     particle.tLife = particle.Life;
     particle.mLife = particle.Life / 2;
     particle.Direction = glm::vec3(
@@ -252,6 +279,10 @@ void ParticleGenerator::respawnParticle(Particle& particle, glm::vec3 offset)
     glm::normalize(particle.Direction);
     particle.speed = this->speed + iterator[rand() % 2] * fmod(pivot, this->speed_variance);
     particle.mass = this->mass + iterator[rand() % 2] * fmod(pivot, this->mass_variance);
+
+    temp = this->size_particle + iterator[rand() % 2] * fmod(pivot, this->size_variance);
+    if (temp <= 0)temp = .1f;
+    particle.size = temp;
 }
 
 glm::vec4 ParticleGenerator::colorVariance(glm::vec4 color, glm::vec4 variance)

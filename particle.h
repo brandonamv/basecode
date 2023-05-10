@@ -15,6 +15,7 @@ struct Particle {
     glm::vec4 Color,midColor,finColor;
     float speed;
     float scale;
+    float size;
     float scaleFin;
     float Life,mLife,tLife;
     float mass;
@@ -32,7 +33,7 @@ public:
     // update all particles
     void Update(float dt, unsigned int newParticles, glm::vec3 offset = glm::vec3(0.0f, 0.0f,.0f));
     // render all particles
-    void Draw(Shader particle_shader, glm::mat4 view, glm::mat4 proj);
+    void Draw(Shader point_shader, Shader quad_shader, glm::mat4 view, glm::mat4 proj);
 
     void setColor(glm::vec4 init, glm::vec4 mid, glm::vec4 fin);
     glm::vec4 getInitColor();
@@ -58,19 +59,24 @@ private:
     glm::vec4 color_ini_variance = glm::vec4(.1f), color_mid_variance = glm::vec4(.1f), color_fin_variance = glm::vec4(.1f);; //varianza color
     glm::vec3 direction = glm::vec3(.0f,1.0f,.0f);
     glm::vec3 direction_variance = glm::vec3(.1f);
-    float speed = .5f;
+    float speed = 2.0f;
     float speed_variance = 1.0f;
-    float size_ini = 10.0f, size_fin = .0f;
+    float size_ini = 5.0f, size_fin = .0f;
     float size_ini_var = 1.0f, size_fin_var = 1.0f;
     float mass=.1f; //masa de la particula
     float mass_variance = 1.0f;
     float anim_speed=1.0f ;
     float lifetime = 2.0f;
     float lifetime_var = 0.1f;
+    
+    float size_particle = 3.0f;
+    float size_variance = 1.0f;
+
     //menu options
     bool opt_mass = false;
     bool opt_blending = false;
     int max_particles = 10;
+    bool opt_point = true;
 
     // render state
     GLuint Program;
@@ -78,6 +84,9 @@ private:
     GLint colorLoc, sizeLoc, pointLoc;
     int size;
     GLuint pointVAO,pointVBO, quadVAO, quadVBO, boundingVAO, boundingVBO;
+    glm::mat4 ident_matrix= glm::rotate(glm::mat4(1.0f), .0f, glm::vec3(0.0f, 1.0f, 0.0f)) *
+        glm::rotate(glm::mat4(1.0f), .0f, glm::vec3(1.0f, 0.0f, 0.0f)) *
+        glm::scale(glm::mat4(1.0f), glm::vec3(.5f));
     // initializes buffer and vertex attributes
     void init();
     // returns the first Particle index that's currently unused e.g. Life <= 0.0f or 0 if no particle is currently inactive

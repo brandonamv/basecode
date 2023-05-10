@@ -75,7 +75,8 @@ int main(){
 
     // Build and compile our shader program
     Shader basic_shader("color_shader.vs", "", "color_shader.frag");
-    Shader particle_shader("particle_shader.vs", "", "particle_shader.frag");
+    Shader point_shader("particle_shader.vs", "", "particle_shader.frag");
+    Shader quad_shader("particle_shader.vs", "particle_shader.gs", "particle_shader.frag");
     std::vector<ParticleGenerator*> particle_system;
     // Initialize ImGUI
     IMGUI_CHECKVERSION();
@@ -330,13 +331,12 @@ int main(){
             }
         }
         
-        particle_shader.Use();
         if (!particle_system.empty())
         {
             for (const auto& x : particle_system)
             {
                 x->Update(deltaTime, 2, glm::vec3(1.0f, 1.0f, 1.0f));
-                x->Draw(particle_shader,view, projection);
+                x->Draw(point_shader, quad_shader,view, projection);
             }
         }
         // Renders the ImGUI elements
