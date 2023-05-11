@@ -12,6 +12,7 @@
 struct Particle {
     int id;
     glm::vec3 Position, Direction;
+    glm::vec3 deviation;
     glm::vec4 Color,midColor,finColor;
     float speed;
     float scale;
@@ -59,6 +60,8 @@ private:
     glm::vec4 color_ini_variance = glm::vec4(.1f), color_mid_variance = glm::vec4(.1f), color_fin_variance = glm::vec4(.1f);; //varianza color
     glm::vec3 direction = glm::vec3(.0f,1.0f,.0f);
     glm::vec3 direction_variance = glm::vec3(.1f);
+    glm::vec3 dirDesviation = glm::vec3(0.1f);
+    glm::vec3 dirDesviation_var = glm::vec3(.001f);
     float speed = 2.0f;
     float speed_variance = 1.0f;
     float size_ini = 5.0f, size_fin = .0f;
@@ -72,6 +75,7 @@ private:
     float size_particle = 3.0f;
     float size_variance = 1.0f;
 
+    
     //menu options
     bool opt_mass = false;
     bool opt_blending = false;
@@ -95,6 +99,8 @@ private:
     void respawnParticle(Particle& particle, glm::vec3 offset = glm::vec3(0.0f, 0.0f,.0f));
 
     glm::vec4 colorVariance(glm::vec4 color, glm::vec4 variance);
+
+    float modNumber(int n, float div);
     
 };
 

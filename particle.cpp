@@ -34,6 +34,10 @@ void ParticleGenerator::Update(float dt, unsigned int newParticles, glm::vec3 of
             float t = p.Life / p.tLife;
             p.Color = t * p.Color + (1 - t) * p.finColor;
             p.scale = t * p.scale + (1 - t) * p.scaleFin;
+            if (rand() % 100 == 0) p.Direction.x += p.deviation.x;
+            if (rand() % 100 == 0) p.Direction.y += p.deviation.y;
+            if (rand() % 100 == 0) p.Direction.z += p.deviation.z;
+            p.Direction = glm::normalize(p.Direction);
             p.Position += p.Direction * p.speed;
             if (this->opt_mass)
             {
@@ -248,10 +252,10 @@ void ParticleGenerator::respawnParticle(Particle& particle, glm::vec3 offset)
     glm::vec3 temp3;
     
     int pivot = rand();
-    float temp = this->size_ini + iterator[rand() % 2] * fmod(pivot, this->size_ini_var);
+    float temp = this->size_ini + iterator[rand() % 2] * modNumber(pivot, this->size_ini_var);
     if (temp <= 0)temp = .000000001f;
     particle.scale = temp;
-    temp = this->size_fin + iterator[rand() % 2] * fmod(pivot, this->size_fin_var);
+    temp = this->size_fin + iterator[rand() % 2] * modNumber(pivot, this->size_fin_var);
     if (temp <= 0)temp = .000000001f;
     particle.scaleFin = temp;
     particle.Position = glm::vec3(
@@ -266,33 +270,39 @@ void ParticleGenerator::respawnParticle(Particle& particle, glm::vec3 offset)
 
     particle.finColor = colorVariance(color_fin, color_fin_variance);
 
-    temp = this->lifetime + iterator[rand() % 2] * fmod(pivot, this->lifetime_var);
+    temp = this->lifetime + iterator[rand() % 2] * modNumber(pivot, this->lifetime_var);
     if (temp <= 0)temp = .000000001f;
     particle.Life = temp;
     particle.tLife = particle.Life;
     particle.mLife = particle.Life / 2;
     particle.Direction = glm::vec3(
-        this->direction.x + iterator[rand() % 2] * fmod(pivot, this->direction_variance.x),
-        this->direction.y + iterator[rand() % 2] * fmod(pivot, this->direction_variance.y),
-        this->direction.z + iterator[rand() % 2] * fmod(pivot, this->direction_variance.z)
+        this->direction.x + iterator[rand() % 2] * modNumber(pivot, this->direction_variance.x),
+        this->direction.y + iterator[rand() % 2] * modNumber(pivot, this->direction_variance.y),
+        this->direction.z + iterator[rand() % 2] * modNumber(pivot, this->direction_variance.z)
     );
-    glm::normalize(particle.Direction);
-    particle.speed = this->speed + iterator[rand() % 2] * fmod(pivot, this->speed_variance);
-    particle.mass = this->mass + iterator[rand() % 2] * fmod(pivot, this->mass_variance);
+    particle.Direction = glm::normalize(particle.Direction);
+    particle.speed = this->speed + iterator[rand() % 2] * modNumber(pivot, this->speed_variance);
+    particle.mass = this->mass + iterator[rand() % 2] * modNumber(pivot, this->mass_variance);
 
-    temp = this->size_particle + iterator[rand() % 2] * fmod(pivot, this->size_variance);
+    temp = this->size_particle + iterator[rand() % 2] * modNumber(pivot, this->size_variance);
     if (temp <= 0)temp = .1f;
     particle.size = temp;
+
+    particle.deviation = glm::vec3(
+        this->dirDesviation.x + this->iterator[rand() % 2] * this->modNumber(pivot, this->dirDesviation_var.x),
+        this->dirDesviation.y + this->iterator[rand() % 2] * this->modNumber(pivot, this->dirDesviation_var.y),
+        this->dirDesviation.z + this->iterator[rand() % 2] * this->modNumber(pivot, this->dirDesviation_var.z)
+    );
 }
 
 glm::vec4 ParticleGenerator::colorVariance(glm::vec4 color, glm::vec4 variance)
 {
     int pivot = rand();
     glm::vec4 temp4 = glm::vec4(
-        color.x + iterator[rand() % 2] * fmod(pivot, variance.x),
-        color.y + iterator[rand() % 2] * fmod(pivot, variance.y),
-        color.z + iterator[rand() % 2] * fmod(pivot, variance.z),
-        color.w + iterator[rand() % 2] * fmod(pivot, variance.w)
+        color.x + iterator[rand() % 2] * modNumber(pivot, variance.x),
+        color.y + iterator[rand() % 2] * modNumber(pivot, variance.y),
+        color.z + iterator[rand() % 2] * modNumber(pivot, variance.z),
+        color.w + iterator[rand() % 2] * modNumber(pivot, variance.w)
     );
     if (temp4.x > 1)temp4.x = 1.0f;
     if (temp4.x < 0)temp4.x = .0f;
@@ -303,4 +313,13 @@ glm::vec4 ParticleGenerator::colorVariance(glm::vec4 color, glm::vec4 variance)
     if (temp4.w > 1)temp4.w = 1.0f;
     if (temp4.w < 0)temp4.w = .0f;
     return temp4;
+}
+
+float ParticleGenerator::modNumber(int n, float div)
+{
+    if (div==0)return 0.0f;
+    else
+    {
+        return fmod(n, div);
+    }
 }

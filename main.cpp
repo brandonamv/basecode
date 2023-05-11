@@ -130,17 +130,18 @@ int main(){
     GLint projLoc = glGetUniformLocation(basic_shader.Program, "projection");
     cam = new camera(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-
+    GLfloat time_elapsed = .0f;
     
     while (!glfwWindowShouldClose(window))
     {
 
-        
+        GLfloat frames = (ImGui::GetIO().Framerate / 8) * opc_anim_speed;
         // Calculate deltatime of current frame
         GLfloat currentFrame = glfwGetTime();
         
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
+        time_elapsed += deltaTime;
         int w, h;
         glfwGetFramebufferSize(window, &w, &h);
 
@@ -152,8 +153,12 @@ int main(){
         do_movement(deltaTime);
 
         // Clear the colorbuffer
-        glClearColor(opc_background_color[0], opc_background_color[1], opc_background_color[2], 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        if (time_elapsed>= 1/ frames)
+        {
+            glClearColor(opc_background_color[0], opc_background_color[1], opc_background_color[2], 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        }
+       
 
         //// Tell OpenGL a new frame is about to begin
         ImGui_ImplOpenGL3_NewFrame();
@@ -333,11 +338,16 @@ int main(){
         
         if (!particle_system.empty())
         {
-            for (const auto& x : particle_system)
+            if (time_elapsed>= 1 / frames)
             {
-                x->Update(deltaTime, 2, glm::vec3(1.0f, 1.0f, 1.0f));
-                x->Draw(point_shader, quad_shader,view, projection);
+                for (const auto& x : particle_system)
+                {
+                    x->Update(deltaTime, 2, glm::vec3(1.0f, 1.0f, 1.0f));
+                    x->Draw(point_shader, quad_shader, view, projection);
+                }
+                time_elapsed = .0f;
             }
+            
         }
         // Renders the ImGUI elements
         ImGui::Render();
