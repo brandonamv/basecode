@@ -8,32 +8,28 @@ ParticleGenerator::ParticleGenerator()
     this->init();
 }
 float secondCounter = .0f;
-void ParticleGenerator::Update(float dt, unsigned int newParticles, glm::vec3 offset)
+void ParticleGenerator::Update(float dt)
 {
     // add new particles 
-    secondCounter += dt;
-    if (secondCounter >=1.0f)
+    secondCounter += dt * this->anim_speed;
+    if (secondCounter >= 1.0f/this->new_particles)
     {
-        for (unsigned int i = 0; i < newParticles; ++i)
-        {
-            int unusedParticle = this->firstUnusedParticle();
-            if (unusedParticle >= 0)
-                this->respawnParticle(this->particles[unusedParticle], offset);
-
-        }
+        int unusedParticle = this->firstUnusedParticle();
+        if (unusedParticle >= 0)
+            this->respawnParticle(this->particles[unusedParticle]);
         secondCounter = .0f;
     }
     // update all particles
     for (unsigned int i = 0; i < this->max_particles; ++i)
     {
         Particle& p = this->particles[i];
-        p.Life -= dt; // reduce life
+        p.Life -= dt*this->anim_speed; // reduce life
         if (p.Life > 0.0f)
         {	// particle is alive, thus update
             
             float t = p.Life / p.tLife;
-            p.Color = t * p.Color + (1 - t) * p.finColor;
-            p.scale = t * p.scale + (1 - t) * p.scaleFin;
+            p.currentColor = t * p.Color + (1 - t) * p.finColor;
+            p.currentScale = t * p.scale + (1 - t) * p.scaleFin;
             if (rand() % 100 == 0) p.Direction.x += p.deviation.x;
             if (rand() % 100 == 0) p.Direction.y += p.deviation.y;
             if (rand() % 100 == 0) p.Direction.z += p.deviation.z;
@@ -41,7 +37,6 @@ void ParticleGenerator::Update(float dt, unsigned int newParticles, glm::vec3 of
             p.Position += p.Direction * p.speed;
             if (this->opt_mass)
             {
-                //p.Position.y -= p.mass*9.8f;
                 p.Position.y -= p.speed+ p.mass * 9.8f*(p.tLife-p.Life);
             }
 
@@ -85,7 +80,7 @@ void ParticleGenerator::Draw(Shader point_shader, Shader quad_shader, glm::mat4 
                 glm::translate(glm::mat4(1.0f), particle.Position) *
                 ident_matrix;
             glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-            glUniform4f(colorLoc, particle.Color.x, particle.Color.y, particle.Color.z, particle.Color.w);
+            glUniform4f(colorLoc, particle.currentColor.x, particle.currentColor.y, particle.currentColor.z, particle.currentColor.w);
             glUniform1i(pointLoc, opt_point);
             if (!opt_point)
                 glUniform1f(sizeLoc, particle.size * particle.scale);
@@ -93,7 +88,7 @@ void ParticleGenerator::Draw(Shader point_shader, Shader quad_shader, glm::mat4 
             glBindVertexArray(this->pointVAO);
             if (opt_point)
             {
-                glPointSize(particle.size * particle.scale);
+                glPointSize(particle.size * particle.currentScale);
                 glDrawArrays(GL_POINTS, 0, this->size/ sizeof(GLfloat));
             }
             else
@@ -103,6 +98,195 @@ void ParticleGenerator::Draw(Shader point_shader, Shader quad_shader, glm::mat4 
             
         }
     }
+}
+
+void ParticleGenerator::setColor(glm::vec4 ini, glm::vec4 fin)
+{
+    this->color_ini = ini;
+    this->color_fin = fin;
+}
+
+float* ParticleGenerator::getInitColor()
+{
+    float color[4] = {this->color_ini.x,this->color_ini.y,this->color_ini.z,this->color_ini.w};
+    return color;
+}
+
+
+float* ParticleGenerator::getFinColor()
+{
+    float color[4] = { this->color_fin.x,this->color_fin.y,this->color_fin.z,this->color_fin.w };
+    return color;
+}
+
+void ParticleGenerator::setRGBAvariance(glm::vec4 ini, glm::vec4 fin)
+{
+    this->color_ini_variance = ini;
+    this->color_fin_variance = fin;
+}
+
+float* ParticleGenerator::getInitColorVariance()
+{
+    float color[4] = { this->color_ini_variance.x,this->color_ini_variance.y,this->color_ini_variance.z,this->color_ini_variance.w };
+    return color;
+}
+
+float* ParticleGenerator::getFinColorVariance()
+{
+    float color[4] = { this->color_fin_variance.x,this->color_fin_variance.y,this->color_fin_variance.z,this->color_fin_variance.w };
+    return color;
+}
+
+void ParticleGenerator::setMinMax(glm::vec3 min, glm::vec3 max)
+{
+    this->spawn_max = max;
+    this->spawn_min = min;
+}
+
+float* ParticleGenerator::getMin()
+{
+    float vec[3] = { this->spawn_min.x,this->spawn_min.y,this->spawn_min.z};
+    return vec;
+}
+
+float* ParticleGenerator::getMax()
+{
+    float vec[3] = { this->spawn_max.x,this->spawn_max.y,this->spawn_max.z };
+    return vec;
+}
+
+void ParticleGenerator::setMaxParticles(int n)
+{
+    this->particles.resize(n);
+    this->max_particles = n;
+}
+
+int ParticleGenerator::getMaxParticles()
+{
+    return this->max_particles;
+}
+
+void ParticleGenerator::setNewParticles(int n)
+{
+    this->new_particles = n;
+}
+
+int ParticleGenerator::getNewParticles()
+{
+    return this->new_particles;
+}
+
+void ParticleGenerator::setNewParticlesVariance(int n)
+{
+    this->new_particles_variance = n;
+}
+
+int ParticleGenerator::getNewParticlesVariance()
+{
+    return this->new_particles_variance;
+}
+
+void ParticleGenerator::setAnimSpeed(float n)
+{
+    this->anim_speed= n;
+}
+
+void ParticleGenerator::setGravity(bool opt)
+{
+    this->opt_mass = opt;
+}
+
+void ParticleGenerator::setLifeTime(float t)
+{
+    this->lifetime = t;
+}
+
+float ParticleGenerator::getLifeTime()
+{
+    return this->lifetime;
+}
+
+void ParticleGenerator::setLifeTimeVar(float t)
+{
+    this->lifetime_var = t;
+}
+
+float ParticleGenerator::getLifeTimeVar()
+{
+    return this->lifetime_var;
+}
+
+void ParticleGenerator::setSpeed(float t)
+{
+    this->speed = t;
+
+}
+
+float ParticleGenerator::getSpeed()
+{
+    return this->speed;
+}
+
+void ParticleGenerator::setSpeedVar(float t)
+{
+    this->speed_variance = t;
+}
+
+float ParticleGenerator::getSpeedVar()
+{
+    return this->speed_variance;
+}
+
+void ParticleGenerator::setSize(float s)
+{
+    this->size_particle = s;
+}
+
+float ParticleGenerator::getSize()
+{
+    return this->size_particle;
+}
+
+void ParticleGenerator::setSizeVar(float s)
+{
+    this->size_variance = s;
+}
+
+float ParticleGenerator::getSizeVar()
+{
+    return this->size_variance;
+}
+
+void ParticleGenerator::setScale(float s_ini, float s_fin)
+{
+    this->scale_ini = s_ini;
+    this->scale_fin = s_fin;
+}
+
+float ParticleGenerator::getScaleIni()
+{
+    return this->scale_ini;
+}
+
+float ParticleGenerator::getScaleFin()
+{
+    return this->scale_fin;
+}
+
+void ParticleGenerator::setScaleVar(float s_ini, float s_fin)
+{
+    this->scale_ini_var = s_ini;
+    this->scale_fin_var = s_fin;
+}
+
+float ParticleGenerator::getScaleIniVar()
+{
+    return this->scale_ini_var;
+}
+
+float ParticleGenerator::getScaleFinVar()
+{
+    return this->scale_fin_var;
 }
 
 int ParticleGenerator::partition(std::vector<Particle>& arr, int start, int end)
@@ -247,31 +431,60 @@ unsigned int ParticleGenerator::firstUnusedParticle()
     return -1;
 }
 
-void ParticleGenerator::respawnParticle(Particle& particle, glm::vec3 offset)
+void ParticleGenerator::respawnParticle(Particle& particle)
 {
     glm::vec3 temp3;
-    
+    glm::vec3 min, max;
     int pivot = rand();
-    float temp = this->size_ini + iterator[rand() % 2] * modNumber(pivot, this->size_ini_var);
-    if (temp <= 0)temp = .000000001f;
+    float temp = this->scale_ini + iterator[rand() % 2] * modNumber(pivot, this->scale_ini_var);
+    if (temp <= 0)temp = .1f;
     particle.scale = temp;
-    temp = this->size_fin + iterator[rand() % 2] * modNumber(pivot, this->size_fin_var);
-    if (temp <= 0)temp = .000000001f;
+    temp = this->scale_fin + iterator[rand() % 2] * modNumber(pivot, this->scale_fin_var);
+    if (temp <= 0)temp = .1f;
     particle.scaleFin = temp;
+    if (this->spawn_min.x < this->spawn_max.x)
+    {
+        min.x = this->spawn_min.x;
+        max.x = this->spawn_max.x;
+    }
+    else
+    {
+        max.x = this->spawn_min.x;
+        min.x = this->spawn_max.x;
+    }
+    if (this->spawn_min.y < this->spawn_max.y)
+    {
+        min.y = this->spawn_min.y;
+        max.y = this->spawn_max.y;
+    }
+    else
+    {
+        max.y = this->spawn_min.y;
+        min.y = this->spawn_max.y;
+    }
+    if (this->spawn_min.z < this->spawn_max.z)
+    {
+        min.z = this->spawn_min.z;
+        max.z = this->spawn_max.z;
+    }
+    else
+    {
+        max.z = this->spawn_min.z;
+        min.z = this->spawn_max.z;
+    }
+    
     particle.Position = glm::vec3(
-        fmod(pivot, this->spawn_max.x - this->spawn_min.x + 1) + this->spawn_min.x,
-        fmod(pivot, this->spawn_max.y - this->spawn_min.y + 1) + this->spawn_min.y,
-        fmod(pivot, this->spawn_max.z - this->spawn_min.z + 1) + this->spawn_min.z
+        fmod(rand(), max.x - min.x + 1) + min.x,
+        fmod(rand(), max.y - min.y + 1) + min.y,
+        fmod(rand(), max.z - min.z + 1) + min.z
     );
     
     particle.Color = colorVariance(color_ini,color_ini_variance);
-    
-    particle.midColor = colorVariance(color_mid, color_mid_variance);
 
     particle.finColor = colorVariance(color_fin, color_fin_variance);
 
     temp = this->lifetime + iterator[rand() % 2] * modNumber(pivot, this->lifetime_var);
-    if (temp <= 0)temp = .000000001f;
+    if (temp <= 0)temp = .1f;
     particle.Life = temp;
     particle.tLife = particle.Life;
     particle.mLife = particle.Life / 2;

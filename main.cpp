@@ -43,7 +43,7 @@ string openFile() {
 // The MAIN function, from here we start the application and run the game loop
 int main(){
 
-    srand(time(NULL));
+    srand(time(0));
     // Init GLFW
     glfwInit();
     // Set all the required options for GLFW, (GLSL version required = 3.0)
@@ -91,6 +91,7 @@ int main(){
     static bool opc_fps;
     static bool opc_antialliasing;
     static bool opc_gravity;
+    static bool opc_play=true;
     static bool opc_blending;
     static bool opc_deph_sort;
     float opc_background_color[3] = { 0.0f, 1.0f, 1.0f };
@@ -102,9 +103,9 @@ int main(){
     float min_box[3] = { .0f,.0f,.0f };
     float max_box[3] = { .0f,.0f,.0f };
     float color_ini[4] = { .0f,.0f,.0f, 1.0f };
-    float color_mid[4] = { .0f,.0f,.0f, .5f };
+    float color_ini_variance[4] = { .0f,.0f,.0f,.0f };
     float color_fin[4] = { .0f,.0f,.0f, .0f };
-    float color_variance[3] = {.0f,.0f,.0f};
+    float color_fin_variance[4] = { .0f,.0f,.0f,.0f };
     int particles_generation = 1;
     int particles_generation_variance = 1;
     float particles_life = 1.0f;
@@ -115,11 +116,14 @@ int main(){
     float particles_speed_variance = .01f;
     static bool particles_texture = false;
     int particles_max = 1;
-    float particles_size_ini = .1f;
-    float particles_size_ini_variance = 3.0f;
-    float particles_size_fin = .1f;
-    float particles_size_fin_variance = 3.0f;
+    float particles_size = .1f;
+    float particles_size_variance = 3.0f;
+    float particles_scale_ini = .1f;
+    float particles_scale_ini_variance = 3.0f;
+    float particles_scale_fin = .1f;
+    float particles_scale_fin_variance = 3.0f;
 
+    ParticleGenerator* particle_actual=nullptr;
     float sx,sy,sz;
     float* objColor = nullptr, * boundingColor;
 
@@ -130,18 +134,15 @@ int main(){
     GLint projLoc = glGetUniformLocation(basic_shader.Program, "projection");
     cam = new camera(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    GLfloat time_elapsed = .0f;
     
     while (!glfwWindowShouldClose(window))
     {
 
-        GLfloat frames = (ImGui::GetIO().Framerate / 8) * opc_anim_speed;
         // Calculate deltatime of current frame
         GLfloat currentFrame = glfwGetTime();
         
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
-        time_elapsed += deltaTime;
         int w, h;
         glfwGetFramebufferSize(window, &w, &h);
 
@@ -152,12 +153,8 @@ int main(){
         glfwPollEvents();
         do_movement(deltaTime);
 
-        // Clear the colorbuffer
-        if (time_elapsed>= 1/ frames)
-        {
-            glClearColor(opc_background_color[0], opc_background_color[1], opc_background_color[2], 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        }
+        glClearColor(opc_background_color[0], opc_background_color[1], opc_background_color[2], 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
        
 
         //// Tell OpenGL a new frame is about to begin
@@ -227,7 +224,6 @@ int main(){
         ImGui::SliderFloat("s_cam", &opc_camera_speed, 0.1f, 30.0f);
         cam->setcameraSpeed(opc_camera_speed,deltaTime);
         ImGui::Separator();
-        ImGui::Checkbox("Gravity", &opc_gravity);
         ImGui::Checkbox("Blending", &opc_blending);/*
         ImGui::gizmo3D("guizmo", light);*/
         if (opc_blending)
@@ -288,15 +284,19 @@ int main(){
             glDisable(GL_BLEND);
         }
 
-        if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+        if (ImGui::Button("New Particles"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+        {
             particle_system.push_back(new ParticleGenerator());
+            particle_actual = particle_system.back();
+        }
 
         if (!particle_system.empty())
         {
             ImGui::Separator();
             ImGui::Text("Animation Speed");
             ImGui::SliderFloat("s_ptcle", &opc_anim_speed, 0.1f, 10.0f);
-
+            ImGui::Checkbox("Gravity", &opc_gravity);
+            ImGui::Checkbox("Play/Stop Animation", &opc_play);
         }
 
 
@@ -338,14 +338,92 @@ int main(){
         
         if (!particle_system.empty())
         {
-            if (time_elapsed>= 1 / frames)
+            particles_max = particle_actual->getMaxParticles();
+            particles_generation = particle_actual->getNewParticles();
+            particles_generation_variance = particle_actual->getNewParticlesVariance();
+            particles_life = particle_actual->getLifeTime();
+            particles_life_variance = particle_actual->getLifeTimeVar();
+            particles_speed = particle_actual->getSpeed();
+            particles_speed_variance = particle_actual->getSpeedVar();
+            particles_size = particle_actual->getSize();
+            particles_size_variance = particle_actual->getSizeVar();
+            particles_scale_ini = particle_actual->getScaleIni();
+            particles_scale_ini_variance = particle_actual->getScaleIniVar();
+            particles_scale_fin = particle_actual->getScaleFin();
+            particles_scale_fin_variance = particle_actual->getScaleFinVar();
+            color_ini[0] = particle_actual->getInitColor()[0];
+            color_ini[1] = particle_actual->getInitColor()[1];
+            color_ini[2] = particle_actual->getInitColor()[2];
+            color_ini[3] = particle_actual->getInitColor()[3];
+            color_ini_variance[0] = particle_actual->getInitColorVariance()[0];
+            color_ini_variance[1] = particle_actual->getInitColorVariance()[1];
+            color_ini_variance[2] = particle_actual->getInitColorVariance()[2];
+            color_ini_variance[3] = particle_actual->getInitColorVariance()[3];
+            color_fin[0] = particle_actual->getFinColor()[0];
+            color_fin[1] = particle_actual->getFinColor()[1];
+            color_fin[2] = particle_actual->getFinColor()[2];
+            color_fin[3] = particle_actual->getFinColor()[3];
+            color_fin_variance[0] = particle_actual->getFinColorVariance()[0];
+            color_fin_variance[1] = particle_actual->getFinColorVariance()[1];
+            color_fin_variance[2] = particle_actual->getFinColorVariance()[2];
+            color_fin_variance[3] = particle_actual->getFinColorVariance()[3];
+            min_box[0] = particle_actual->getMin()[0];
+            min_box[1] = particle_actual->getMin()[1];
+            min_box[2] = particle_actual->getMin()[2];
+            max_box[0] = particle_actual->getMax()[0];
+            max_box[1] = particle_actual->getMax()[1];
+            max_box[2] = particle_actual->getMax()[2];
+            ImGui::Begin("Particle Menu", &menu_particle, ImGuiWindowFlags_MenuBar);
+            ImGui::InputFloat3("Spawn Init", min_box);
+            ImGui::InputFloat3("Spawn Fin", max_box);
+            ImGui::SliderInt("Max Particles", &particles_max, 1, 10000);
+            ImGui::SliderInt("Particles/sec", &particles_generation, 1, 1000);
+            ImGui::SliderInt("Particles/sec var", &particles_generation_variance, 1, 100);
+            ImGui::SliderFloat("LifeTime", &particles_life, 0.1f, 10.0f,"%.2f secs");
+            ImGui::SliderFloat("LifeTime var", &particles_life_variance, 0.1f, 3.0f, "%.2f secs");
+            ImGui::SliderFloat("Speed", &particles_speed, 0.01f, 100.0f);
+            ImGui::SliderFloat("Speed var", &particles_speed_variance, 0.01f, 30.0f);
+            ImGui::SliderFloat("Size", &particles_size, 1.0f, 5.0f);
+            ImGui::SliderFloat("Size var", &particles_size_variance, 1.0f, 5.0f);
+            ImGui::SliderFloat("Scale Init", &particles_scale_ini, 0.1f, 10.0f);
+            ImGui::SliderFloat("Scale Init var", &particles_scale_ini_variance, .1f, 3.0f);
+            ImGui::SliderFloat("Scale Fin", &particles_scale_fin, 0.1f, 10.0f);
+            ImGui::SliderFloat("Scale Fin var", &particles_scale_fin_variance, .1f, 3.0f);
+            ImGui::ColorEdit4("InitColor", color_ini);
+            ImGui::SliderFloat4("Init var", color_ini_variance, .0f, 1.0f);
+            ImGui::ColorEdit4("FinalColor", color_fin);
+            ImGui::SliderFloat4("Final var", color_fin_variance, .0f, 1.0f);
+            ImGui::End();
+            particle_actual->setMaxParticles(particles_max);
+            particle_actual->setNewParticles(particles_generation);
+            particle_actual->setNewParticlesVariance(particles_generation_variance);
+            particle_actual->setLifeTime(particles_life);
+            particle_actual->setLifeTimeVar(particles_life_variance);
+            particle_actual->setSpeed(particles_speed);
+            particle_actual->setSpeedVar(particles_speed_variance);
+            particle_actual->setSize(particles_size);
+            particle_actual->setSizeVar(particles_size_variance);
+            particle_actual->setScale(particles_scale_ini,particles_scale_fin);
+            particle_actual->setScaleVar(particles_scale_ini_variance,particles_scale_fin_variance);
+            particle_actual->setColor(
+                glm::vec4(color_ini[0], color_ini[1], color_ini[2], color_ini[3]), 
+                glm::vec4(color_fin[0], color_fin[1], color_fin[2], color_fin[3])
+            );
+            particle_actual->setRGBAvariance(
+                glm::vec4(color_ini_variance[0], color_ini_variance[1], color_ini_variance[2], color_ini_variance[3]),
+                glm::vec4(color_fin_variance[0], color_fin_variance[1], color_fin_variance[2], color_fin_variance[3])
+            );
+            particle_actual->setMinMax(
+                glm::vec3(min_box[0], min_box[1], min_box[2]),
+                glm::vec3(max_box[0], max_box[1], max_box[2])
+            );
+
+            for (const auto& x : particle_system)
             {
-                for (const auto& x : particle_system)
-                {
-                    x->Update(deltaTime, 2, glm::vec3(1.0f, 1.0f, 1.0f));
-                    x->Draw(point_shader, quad_shader, view, projection);
-                }
-                time_elapsed = .0f;
+                x->setAnimSpeed(opc_anim_speed);
+                x->setGravity(opc_gravity);
+                if (opc_play)x->Update(deltaTime);
+                x->Draw(point_shader, quad_shader, view, projection);
             }
             
         }
