@@ -11,7 +11,7 @@
 // Represents a single particle and its state
 struct Particle {
     int id;
-    glm::vec3 Position, Direction;
+    glm::vec3 Position, Direction, currentPosition;
     glm::vec3 deviation;
     glm::vec4 Color,midColor,finColor,currentColor;
     float speed;

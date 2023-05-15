@@ -23,21 +23,21 @@ void ParticleGenerator::Update(float dt)
     for (unsigned int i = 0; i < this->max_particles; ++i)
     {
         Particle& p = this->particles[i];
-        p.Life -= dt*this->anim_speed; // reduce life
+        p.Life -= dt * this->anim_speed; // reduce life
         if (p.Life > 0.0f)
         {	// particle is alive, thus update
             
             float t = p.Life / p.tLife;
             p.currentColor = t * p.Color + (1 - t) * p.finColor;
             p.currentScale = t * p.scale + (1 - t) * p.scaleFin;
-            if (rand() % 100 == 0) p.Direction.x += p.deviation.x;
-            if (rand() % 100 == 0) p.Direction.y += p.deviation.y;
-            if (rand() % 100 == 0) p.Direction.z += p.deviation.z;
+            if (fmod(rand(), 100 / this->anim_speed) == 0) p.Direction.x += p.deviation.x;
+            if (fmod(rand() , 100 / this->anim_speed) == 0) p.Direction.y += p.deviation.y;
+            if (fmod(rand() , 100 / this->anim_speed) == 0) p.Direction.z += p.deviation.z;
             p.Direction = glm::normalize(p.Direction);
-            p.Position += p.Direction * p.speed;
+            p.currentPosition = p.Position + p.Direction * p.speed * (p.tLife - p.Life);
             if (this->opt_mass)
             {
-                p.Position.y -= p.speed+ p.mass * 9.8f*(p.tLife-p.Life);
+                p.Position.y -= p.speed + p.mass * 9.8f * (p.tLife - p.Life);
             }
 
         }
@@ -77,7 +77,7 @@ void ParticleGenerator::Draw(Shader point_shader, Shader quad_shader, glm::mat4 
         if (particle.Life > 0.0f)
         {
             glm::mat4 model =
-                glm::translate(glm::mat4(1.0f), particle.Position) *
+                glm::translate(glm::mat4(1.0f), particle.currentPosition) *
                 ident_matrix;
             glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
             glUniform4f(colorLoc, particle.currentColor.x, particle.currentColor.y, particle.currentColor.z, particle.currentColor.w);

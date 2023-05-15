@@ -132,7 +132,7 @@ int main(){
     // Get the uniform locations
     GLint viewLoc = glGetUniformLocation(basic_shader.Program, "view");
     GLint projLoc = glGetUniformLocation(basic_shader.Program, "projection");
-    cam = new camera(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    cam = new camera(glm::vec3(0.0f, 1.0f, 10.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     
     while (!glfwWindowShouldClose(window))
