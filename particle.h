@@ -45,7 +45,10 @@ public:
     void setMinMax(glm::vec3 min, glm::vec3 max);
     float* getMin();
     float* getMax();
-
+    void setDirection(glm::vec3 dir);
+    float* getDirection();
+    void setDirectionVar(glm::vec3 dir);
+    float* getDirectionVar();
     void setMaxParticles(int n);
     int getMaxParticles();
     void setNewParticles(int n);
@@ -73,6 +76,13 @@ public:
     void setScaleVar(float s_ini, float s_fin);
     float getScaleIniVar();
     float getScaleFinVar();
+    void setMass(float m);
+    float getMass();
+    void setMassVar(float m);
+    float getMassVar();
+
+    void setOptPoint(bool o);
+    bool getOptPoint();
 private:
     int iterator[2]{ -1, 1 };
     int partition(std::vector<Particle>& arr, int start, int end);
@@ -80,7 +90,7 @@ private:
     // state
     std::vector<Particle> particles;
     //particles options
-    glm::vec3 spawn_min=glm::vec3(.0f), spawn_max = glm::vec3(.0f); //area de spawn
+    glm::vec3 spawn_min=glm::vec3(-1.0f), spawn_max = glm::vec3(1.0f); //area de spawn
     glm::vec4 color_ini = glm::vec4(1.0f), color_fin = glm::vec4(.1f); //colores
     glm::vec4 color_ini_variance = glm::vec4(.1f), color_fin_variance = glm::vec4(.1f);; //varianza color
     glm::vec3 direction = glm::vec3(.0f,1.0f,.0f);

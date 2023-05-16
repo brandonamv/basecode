@@ -30,14 +30,15 @@ void ParticleGenerator::Update(float dt)
             float t = p.Life / p.tLife;
             p.currentColor = t * p.Color + (1 - t) * p.finColor;
             p.currentScale = t * p.scale + (1 - t) * p.scaleFin;
-            if (fmod(rand(), 100 / this->anim_speed) == 0) p.Direction.x += p.deviation.x;
-            if (fmod(rand() , 100 / this->anim_speed) == 0) p.Direction.y += p.deviation.y;
-            if (fmod(rand() , 100 / this->anim_speed) == 0) p.Direction.z += p.deviation.z;
+            if (fmod(rand(), 1000 / this->anim_speed) == 0) p.Direction.x += p.deviation.x;
+            if (fmod(rand() , 1000 / this->anim_speed) == 0) p.Direction.y += p.deviation.y;
+            if (fmod(rand() , 1000 / this->anim_speed) == 0) p.Direction.z += p.deviation.z;
             p.Direction = glm::normalize(p.Direction);
             p.currentPosition = p.Position + p.Direction * p.speed * (p.tLife - p.Life);
             if (this->opt_mass)
             {
-                p.Position.y -= p.speed + p.mass * 9.8f * (p.tLife - p.Life);
+                float tempSpeed = p.speed - p.mass * 9.8f * (p.tLife - p.Life);
+                p.currentPosition.y = p.Position.y + p.Direction.y * tempSpeed * (p.tLife - p.Life);
             }
 
         }
@@ -70,7 +71,6 @@ void ParticleGenerator::Draw(Shader point_shader, Shader quad_shader, glm::mat4 
     // Pass the matrices to the shader
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
-    // use additive blending to give it a 'glow' effect
     //quickSort(particles, 0, particles.size()-1);
     for (Particle particle : this->particles)
     {
@@ -83,7 +83,7 @@ void ParticleGenerator::Draw(Shader point_shader, Shader quad_shader, glm::mat4 
             glUniform4f(colorLoc, particle.currentColor.x, particle.currentColor.y, particle.currentColor.z, particle.currentColor.w);
             glUniform1i(pointLoc, opt_point);
             if (!opt_point)
-                glUniform1f(sizeLoc, particle.size * particle.scale);
+                glUniform1f(sizeLoc, particle.size * particle.currentScale);
             
             glBindVertexArray(this->pointVAO);
             if (opt_point)
@@ -152,6 +152,28 @@ float* ParticleGenerator::getMin()
 float* ParticleGenerator::getMax()
 {
     float vec[3] = { this->spawn_max.x,this->spawn_max.y,this->spawn_max.z };
+    return vec;
+}
+
+void ParticleGenerator::setDirection(glm::vec3 dir)
+{
+    this->direction = dir;
+}
+
+float* ParticleGenerator::getDirection()
+{
+    float vec[3] = { this->direction.x,this->direction.y,this->direction.z };
+    return vec;
+}
+
+void ParticleGenerator::setDirectionVar(glm::vec3 dir)
+{
+    this->direction_variance = dir;
+}
+
+float* ParticleGenerator::getDirectionVar()
+{
+    float vec[3] = { this->direction_variance.x,this->direction_variance.y,this->direction_variance.z };
     return vec;
 }
 
@@ -289,6 +311,36 @@ float ParticleGenerator::getScaleFinVar()
     return this->scale_fin_var;
 }
 
+void ParticleGenerator::setMass(float m)
+{
+    this->mass=m;
+}
+
+float ParticleGenerator::getMass()
+{
+    return this->mass;
+}
+
+void ParticleGenerator::setMassVar(float m)
+{
+    this->mass_variance = m;
+}
+
+float ParticleGenerator::getMassVar()
+{
+    return this->mass_variance;
+}
+
+void ParticleGenerator::setOptPoint(bool o)
+{
+    opt_point = o;
+}
+
+bool ParticleGenerator::getOptPoint()
+{
+    return this->opt_point;
+}
+
 int ParticleGenerator::partition(std::vector<Particle>& arr, int start, int end)
 {
     // assuspawn_ming last element as pivotElement
@@ -419,6 +471,10 @@ unsigned int ParticleGenerator::firstUnusedParticle()
             return i;
         }
     }
+    if (lastUsedParticle>this->max_particles)
+    {
+        lastUsedParticle = this->max_particles;
+    }
     // otherwise, do a linear search
     for (unsigned int i = 0; i < lastUsedParticle; ++i) {
         if (this->particles[i].Life <= 0.0f) {
@@ -533,6 +589,10 @@ float ParticleGenerator::modNumber(int n, float div)
     if (div==0)return 0.0f;
     else
     {
+        if (div==1.0f||div==.5f)
+        {
+            return fmod(n, div + .01f);
+        }
         return fmod(n, div);
     }
 }

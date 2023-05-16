@@ -71,13 +71,13 @@ int main(){
     glEnable(GL_POLYGON_OFFSET_FILL);
     glEnable(GL_BLEND);
     glEnable(GL_ALPHA_TEST);
+    glEnable(GL_PROGRAM_POINT_SIZE);
     glPolygonOffset(1.0, 1.0);
 
     // Build and compile our shader program
     Shader basic_shader("color_shader.vs", "", "color_shader.frag");
     Shader point_shader("particle_shader.vs", "", "particle_shader.frag");
     Shader quad_shader("particle_shader.vs", "particle_shader.gs", "particle_shader.frag");
-    std::vector<ParticleGenerator*> particle_system;
     // Initialize ImGUI
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -115,6 +115,7 @@ int main(){
     float particles_speed = .01f;
     float particles_speed_variance = .01f;
     static bool particles_texture = false;
+    static bool particles_point = true;
     int particles_max = 1;
     float particles_size = .1f;
     float particles_size_variance = 3.0f;
@@ -122,8 +123,10 @@ int main(){
     float particles_scale_ini_variance = 3.0f;
     float particles_scale_fin = .1f;
     float particles_scale_fin_variance = 3.0f;
+    float particle_mass=1.0f;
+    float particle_mass_variance = 1.0f;
 
-    ParticleGenerator* particle_actual=nullptr;
+    
     float sx,sy,sz;
     float* objColor = nullptr, * boundingColor;
 
@@ -317,25 +320,7 @@ int main(){
         
         //// Ends the window
         ImGui::End();
-        glm::mat4 view = cam->getView();
-        glm::mat4 projection = glm::perspective(60.0f * 3.14159f / 180.0f, float(w) / float(h), 0.01f, 100.0f);
-       
-        
-        
-        basic_shader.Use();
-        // Pass the matrices to the shader
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
-                
-        if (!objects.empty())
-        {
-            for (const auto &x:objects)
-            {
-                x->draw(basic_shader);
-                x->setSelect(x == actual);
-            }
-        }
-        
+
         if (!particle_system.empty())
         {
             particles_max = particle_actual->getMaxParticles();
@@ -373,26 +358,51 @@ int main(){
             max_box[0] = particle_actual->getMax()[0];
             max_box[1] = particle_actual->getMax()[1];
             max_box[2] = particle_actual->getMax()[2];
+            particles_direction[0] = particle_actual->getDirection()[0];
+            particles_direction[1] = particle_actual->getDirection()[1];
+            particles_direction[2] = particle_actual->getDirection()[2];
+            particles_direction_variance[0] = particle_actual->getDirectionVar()[0];
+            particles_direction_variance[1] = particle_actual->getDirectionVar()[1];
+            particles_direction_variance[2] = particle_actual->getDirectionVar()[2];
+            particle_mass = particle_actual->getMass();
+            particle_mass_variance = particle_actual->getMassVar();
+            particles_point = particle_actual->getOptPoint();
             ImGui::Begin("Particle Menu", &menu_particle, ImGuiWindowFlags_MenuBar);
             ImGui::InputFloat3("Spawn Init", min_box);
             ImGui::InputFloat3("Spawn Fin", max_box);
+            ImGui::Checkbox("Point", &particles_point);
+            if (particles_point)
+            {
+                ImGui::SliderFloat("Size", &particles_size, 1.0f, 5.0f);
+                ImGui::SliderFloat("Size Var", &particles_size_variance, 1.0f, 5.0f);
+            }
+            else
+            {
+                ImGui::SliderFloat("Size", &particles_size, 1.0f, 3.0f);
+                ImGui::SliderFloat("Size Var", &particles_size_variance, 1.0f, 3.0f);
+            }
+            if (opc_gravity)
+            {
+                ImGui::InputFloat("Mass", &particle_mass, .1f, 1.0f);
+                ImGui::InputFloat("Mass Variance", &particle_mass_variance, .1f, 1.0f);
+            }
             ImGui::SliderInt("Max Particles", &particles_max, 1, 10000);
             ImGui::SliderInt("Particles/sec", &particles_generation, 1, 1000);
-            ImGui::SliderInt("Particles/sec var", &particles_generation_variance, 1, 100);
-            ImGui::SliderFloat("LifeTime", &particles_life, 0.1f, 10.0f,"%.2f secs");
-            ImGui::SliderFloat("LifeTime var", &particles_life_variance, 0.1f, 3.0f, "%.2f secs");
+            ImGui::SliderInt("Particles/sec Var", &particles_generation_variance, 1, 100);
+            ImGui::SliderFloat("LifeTime", &particles_life, 0.1f, 10.0f, "%.2f secs");
+            ImGui::SliderFloat("LifeTime Var", &particles_life_variance, 0.1f, 3.0f, "%.2f secs");
             ImGui::SliderFloat("Speed", &particles_speed, 0.01f, 100.0f);
-            ImGui::SliderFloat("Speed var", &particles_speed_variance, 0.01f, 30.0f);
-            ImGui::SliderFloat("Size", &particles_size, 1.0f, 5.0f);
-            ImGui::SliderFloat("Size var", &particles_size_variance, 1.0f, 5.0f);
+            ImGui::SliderFloat("Speed Var", &particles_speed_variance, 0.01f, 30.0f);
             ImGui::SliderFloat("Scale Init", &particles_scale_ini, 0.1f, 10.0f);
-            ImGui::SliderFloat("Scale Init var", &particles_scale_ini_variance, .1f, 3.0f);
+            ImGui::SliderFloat("Scale Init Var", &particles_scale_ini_variance, .1f, 3.0f);
             ImGui::SliderFloat("Scale Fin", &particles_scale_fin, 0.1f, 10.0f);
-            ImGui::SliderFloat("Scale Fin var", &particles_scale_fin_variance, .1f, 3.0f);
+            ImGui::SliderFloat("Scale Fin Var", &particles_scale_fin_variance, .1f, 3.0f);
             ImGui::ColorEdit4("InitColor", color_ini);
-            ImGui::SliderFloat4("Init var", color_ini_variance, .0f, 1.0f);
+            ImGui::SliderFloat4("Init Var", color_ini_variance, .0f, 1.0f);
             ImGui::ColorEdit4("FinalColor", color_fin);
-            ImGui::SliderFloat4("Final var", color_fin_variance, .0f, 1.0f);
+            ImGui::SliderFloat4("Final Var", color_fin_variance, .0f, 1.0f);
+            ImGui::SliderFloat3("Direction Var", particles_direction_variance, .0f, .5f);
+            ImGui::gizmo3D("Direction", particles_direction);
             ImGui::End();
             particle_actual->setMaxParticles(particles_max);
             particle_actual->setNewParticles(particles_generation);
@@ -403,10 +413,10 @@ int main(){
             particle_actual->setSpeedVar(particles_speed_variance);
             particle_actual->setSize(particles_size);
             particle_actual->setSizeVar(particles_size_variance);
-            particle_actual->setScale(particles_scale_ini,particles_scale_fin);
-            particle_actual->setScaleVar(particles_scale_ini_variance,particles_scale_fin_variance);
+            particle_actual->setScale(particles_scale_ini, particles_scale_fin);
+            particle_actual->setScaleVar(particles_scale_ini_variance, particles_scale_fin_variance);
             particle_actual->setColor(
-                glm::vec4(color_ini[0], color_ini[1], color_ini[2], color_ini[3]), 
+                glm::vec4(color_ini[0], color_ini[1], color_ini[2], color_ini[3]),
                 glm::vec4(color_fin[0], color_fin[1], color_fin[2], color_fin[3])
             );
             particle_actual->setRGBAvariance(
@@ -417,7 +427,39 @@ int main(){
                 glm::vec3(min_box[0], min_box[1], min_box[2]),
                 glm::vec3(max_box[0], max_box[1], max_box[2])
             );
+            particle_actual->setDirection(
+                glm::vec3(particles_direction[0], particles_direction[1], particles_direction[2])
+            );
+            particle_actual->setDirectionVar(
+                glm::vec3(particles_direction_variance[0], particles_direction_variance[1], particles_direction_variance[2])
+            );
+            particle_actual->setMass(particle_mass);
+            particle_actual->setMassVar(particle_mass_variance);
+            particle_actual->setOptPoint(particles_point);
+        }
 
+        glm::mat4 view = cam->getView();
+        glm::mat4 projection = glm::perspective(60.0f * 3.14159f / 180.0f, float(w) / float(h), 0.01f, 100.0f);
+       
+        
+        
+        basic_shader.Use();
+        // Pass the matrices to the shader
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+                
+        if (!objects.empty())
+        {
+            for (const auto &x:objects)
+            {
+                x->draw(basic_shader);
+                x->setSelect(x == actual);
+            }
+        }
+        
+        if (!particle_system.empty())
+        {
+            
             for (const auto& x : particle_system)
             {
                 x->setAnimSpeed(opc_anim_speed);
@@ -440,6 +482,7 @@ int main(){
     ImGui::DestroyContext();
     // Delete all the objects we've created
     glDeleteProgram(basic_shader.Program);
+    glDeleteProgram(point_shader.Program);
     // Terminate GLFW, clearing any resources allocated by GLFW.
     glfwTerminate();
     return 0;
