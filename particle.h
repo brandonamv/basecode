@@ -4,10 +4,136 @@
 #define PARTICLE_GENERATOR_H
 #include <vector>
 #include <glm/glm.hpp>
+#include <GL/glew.h>
 
-#include "Shader.h"
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <iostream>
 
 
+
+//class graphic
+//{
+//public:
+//    GLuint Program;
+//    graphic();
+//    // Constructor generates the shader on the fly
+//    graphic(const GLchar* vertexPath, const GLchar* geometryPath, const GLchar* fragmentPath)
+//    {
+//        // 1. Retrieve the vertex/fragment source code from filePath
+//        std::string vertexCode;
+//        std::string geometryCode;
+//        std::string fragmentCode;
+//
+//        std::ifstream vShaderFile;
+//        std::ifstream gShaderFile;
+//        std::ifstream fShaderFile;
+//        // ensures ifstream objects can throw exceptions:
+//        vShaderFile.exceptions(std::ifstream::badbit);
+//        if (geometryPath != "")
+//            gShaderFile.exceptions(std::ifstream::badbit);
+//
+//        fShaderFile.exceptions(std::ifstream::badbit);
+//        try
+//        {
+//            // Open files
+//            vShaderFile.open(vertexPath);
+//            if (geometryPath != "")
+//                gShaderFile.open(geometryPath);
+//            fShaderFile.open(fragmentPath);
+//            std::stringstream vShaderStream, gShaderStream, fShaderStream;
+//            // Read file's buffer contents into streams
+//            vShaderStream << vShaderFile.rdbuf();
+//            if (geometryPath != "")
+//                gShaderStream << gShaderFile.rdbuf();
+//            fShaderStream << fShaderFile.rdbuf();
+//            // close file handlers
+//            vShaderFile.close();
+//            if (geometryPath != "")
+//                gShaderFile.close();
+//            fShaderFile.close();
+//            // Convert stream into string
+//            vertexCode = vShaderStream.str();
+//            if (geometryPath != "")
+//                geometryCode = gShaderStream.str();
+//            fragmentCode = fShaderStream.str();
+//        }
+//        catch (std::ifstream::failure e)
+//        {
+//            std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
+//        }
+//        const GLchar* vShaderCode = vertexCode.c_str();
+//        const GLchar* gShaderCode = "";
+//        if (geometryPath != "")
+//            gShaderCode = geometryCode.c_str();
+//        const GLchar* fShaderCode = fragmentCode.c_str();
+//        // 2. Compile shaders
+//        GLuint vertex, geometry, fragment;
+//        GLint success;
+//        GLchar infoLog[512];
+//        // Vertex Shader
+//        vertex = glCreateShader(GL_VERTEX_SHADER);
+//        glShaderSource(vertex, 1, &vShaderCode, NULL);
+//        glCompileShader(vertex);
+//        // Print compile errors if any
+//        glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
+//        if (!success)
+//        {
+//            glGetShaderInfoLog(vertex, 512, NULL, infoLog);
+//            std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+//        }
+//        //geometry Shader
+//        if (geometryPath != "") {
+//            geometry = glCreateShader(GL_GEOMETRY_SHADER);
+//            glShaderSource(geometry, 1, &gShaderCode, NULL);
+//            glCompileShader(geometry);
+//            // Print compile errors if any
+//            glGetShaderiv(geometry, GL_COMPILE_STATUS, &success);
+//            if (!success)
+//            {
+//                glGetShaderInfoLog(geometry, 512, NULL, infoLog);
+//                std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+//            }
+//        }
+//        // Fragment Shader
+//        fragment = glCreateShader(GL_FRAGMENT_SHADER);
+//        glShaderSource(fragment, 1, &fShaderCode, NULL);
+//        glCompileShader(fragment);
+//        // Print compile errors if any
+//        glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
+//        if (!success)
+//        {
+//            glGetShaderInfoLog(fragment, 512, NULL, infoLog);
+//            std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+//        }
+//        // Shader Program
+//        this->Program = glCreateProgram();
+//        glAttachShader(this->Program, vertex);
+//        if (geometryPath != "")
+//            glAttachShader(this->Program, geometry);
+//        glAttachShader(this->Program, fragment);
+//        glLinkProgram(this->Program);
+//        // Print linking errors if any
+//        glGetProgramiv(this->Program, GL_LINK_STATUS, &success);
+//        if (!success)
+//        {
+//            glGetProgramInfoLog(this->Program, 512, NULL, infoLog);
+//            std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+//        }
+//        // Delete the shaders as they're linked into our program now and no longer necessery
+//        glDeleteShader(vertex);
+//        if (geometryPath != "")
+//            glDeleteShader(geometry);
+//        glDeleteShader(fragment);
+//
+//    }
+//    // Uses the current shader
+//    void Use()
+//    {
+//        glUseProgram(this->Program);
+//    }
+//};
 // Represents a single particle and its state
 struct Particle {
     int id;
@@ -33,8 +159,10 @@ public:
     // update all particles
     void Update(float dt);
     // render all particles
-    void Draw(Shader point_shader, Shader quad_shader, glm::mat4 view, glm::mat4 proj);
+    void Draw( glm::mat4 view, glm::mat4 proj);
 
+    void setTexture(unsigned char* data, int width, int height, bool active);
+    bool getTexture();
     void setColor(glm::vec4 ini, glm::vec4 fin);
     float* getInitColor();
     float* getFinColor();
@@ -114,18 +242,24 @@ private:
     //menu options
     bool opt_mass = false;
     bool opt_blending = false;
-    int max_particles = 10;
     bool opt_point = true;
+    bool opt_texture = false;
+    int max_particles = 10;
+    
 
     // render state
+
+    float secondCounter = .0f;
     GLuint Program;
+    GLuint texture;
     GLint viewLoc, projLoc, modelLoc;
-    GLint colorLoc, sizeLoc, pointLoc;
+    GLint colorLoc, sizeLoc, texturizedLoc;
     int size;
     GLuint pointVAO,pointVBO, quadVAO, quadVBO, boundingVAO, boundingVBO;
     glm::mat4 ident_matrix= glm::rotate(glm::mat4(1.0f), .0f, glm::vec3(0.0f, 1.0f, 0.0f)) *
         glm::rotate(glm::mat4(1.0f), .0f, glm::vec3(1.0f, 0.0f, 0.0f)) *
         glm::scale(glm::mat4(1.0f), glm::vec3(.5f));
+    GLuint point_shader,quad_shader;
     // initializes buffer and vertex attributes
     void init();
     // returns the first Particle index that's currently unused e.g. Life <= 0.0f or 0 if no particle is currently inactive

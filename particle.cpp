@@ -3,27 +3,192 @@
 #include "particle.h"
 #include <math.h>
 # define MY_PI 3.14159265358979323846
+
 ParticleGenerator::ParticleGenerator()
 {
+    
+    const GLchar* vShaderCode = 
+        "#version 330 core \n"
+        "layout(location = 0) in vec3 position;\n"
+        "uniform mat4 projection;\n"
+        "uniform mat4 view;\n"
+        "uniform mat4 model;\n"
+        "void main()\n"
+        "{\n"
+        "    gl_Position = projection * view * model * vec4(position, 1.0);\n"
+        "}";
+    const GLchar* gShaderCode =
+        "#version 330 core \n"
+        "layout(points) in;\n"
+        "layout(triangle_strip, max_vertices = 4) out;\n"
+        "out vec2 TexCoord;\n"
+        "uniform float size;\n"
+        "void main() {\n"
+        "   gl_Position = gl_in[0].gl_Position + vec4(-size, -size, 0.0, 0.0);\n"
+        "   TexCoord = vec2(0.0, 0.0);\n"
+        "    EmitVertex();\n"
+        "    gl_Position = gl_in[0].gl_Position + vec4(size, -size, 0.0, 0.0);\n"
+        "    TexCoord = vec2(1.0, 0.0);\n"
+        "    EmitVertex();\n"
+        "   gl_Position = gl_in[0].gl_Position + vec4(-size, size, 0.0, 0.0);\n"
+        "    TexCoord = vec2(0.0, 1.0);\n"
+        "    EmitVertex();\n"
+        "    gl_Position = gl_in[0].gl_Position + vec4(size, size, 0.0, 0.0);\n"
+        "    TexCoord = vec2(1.0, 1.0);\n"
+        "    EmitVertex();\n"
+        "    EndPrimitive();\n"
+        "}";
+    const GLchar* fShaderCode = 
+        "#version 330 core \n"
+        "out vec4 color;\n"
+        "uniform vec4 Color;\n"
+        "uniform bool texturized;\n"
+        "uniform sampler2D ourTexture;\n"
+        "in vec2 TexCoord;\n"
+        "void main()\n"
+        "{\n"
+        "    if (texturized)\n"
+        "        color = texture(ourTexture, TexCoord) * Color;\n"
+        "    else\n"
+        "        color = Color;\n"
+        "}";
+    // 2. Compile shaders
+    GLuint vertex, geometry, fragment;
+    GLint success;
+    GLchar infoLog[512];
+    // Vertex Shader
+    vertex = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertex, 1, &vShaderCode, NULL);
+    glCompileShader(vertex);
+    // Print compile errors if any
+    glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(vertex, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::VERTEX1::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+    //geometry Shader
+    geometry = glCreateShader(GL_GEOMETRY_SHADER);
+    glShaderSource(geometry, 1, &gShaderCode, NULL);
+    glCompileShader(geometry);
+    // Print compile errors if any
+    glGetShaderiv(geometry, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(geometry, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::GEOMETRY::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+    
+    // Fragment Shader
+    fragment = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragment, 1, &fShaderCode, NULL);
+    glCompileShader(fragment);
+    // Print compile errors if any
+    glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(fragment, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+    // Shader Program
+    this->quad_shader = glCreateProgram();
+    glAttachShader(this->quad_shader, vertex);
+    glAttachShader(this->quad_shader, geometry);
+    glAttachShader(this->quad_shader, fragment);
+    glLinkProgram(this->quad_shader);
+    // Print linking errors if any
+    glGetProgramiv(this->quad_shader, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        glGetProgramInfoLog(this->quad_shader, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+    }
+    // Delete the shaders as they're linked into our program now and no longer necessery
+    glDeleteShader(vertex);
+    glDeleteShader(geometry);
+    glDeleteShader(fragment);
+    const GLchar* vShaderCodePoint = 
+        "#version 330 core \n"
+        "layout(location = 0) in vec3 position;\n"
+        "uniform mat4 projection;\n"
+        "uniform mat4 view;\n"
+        "uniform mat4 model;\n"
+        "void main()\n"
+        "{\n"
+        "    gl_Position = projection * view * model * vec4(position, 1.0);\n"
+        "}";
+    const GLchar* fShaderCodePoint = 
+        "#version 330 core \n"
+        "out vec4 color;\n"
+        "uniform vec4 Color;\n"
+        "void main()\n"
+        "{\n"
+        "   if (dot(gl_PointCoord - 0.5, gl_PointCoord - 0.5) > 0.25)\n"
+        "        discard;\n"
+        "   else\n"
+        "       color = (Color);\n"
+        "}  ";
+    // 2. Compile shaders
+    // Vertex Shader
+    vertex = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertex, 1, &vShaderCodePoint, NULL);
+    glCompileShader(vertex);
+    // Print compile errors if any
+    glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(vertex, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+
+    // Fragment Shader
+    fragment = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragment, 1, &fShaderCodePoint, NULL);
+    glCompileShader(fragment);
+    // Print compile errors if any
+    glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(fragment, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+    // Shader Program
+    this->point_shader = glCreateProgram();
+    glAttachShader(this->point_shader, vertex);
+    glAttachShader(this->point_shader, fragment);
+    glLinkProgram(this->point_shader);
+    // Print linking errors if any
+    glGetProgramiv(this->point_shader, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        glGetProgramInfoLog(this->point_shader, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+    }
+    // Delete the shaders as they're linked into our program now and no longer necessery
+    glDeleteShader(vertex);
+    glDeleteShader(fragment);
     this->init();
 }
-float secondCounter = .0f;
 void ParticleGenerator::Update(float dt)
 {
+    
     // add new particles 
-    secondCounter += dt * this->anim_speed;
-    if (secondCounter >= 1.0f/this->new_particles)
+    this->secondCounter+= dt * this->anim_speed;
+    if (this->secondCounter >= 1.0f/this->new_particles)
     {
         int unusedParticle = this->firstUnusedParticle();
         if (unusedParticle >= 0)
             this->respawnParticle(this->particles[unusedParticle]);
-        secondCounter = .0f;
+        
+        this->secondCounter = .0f;
     }
     // update all particles
     for (unsigned int i = 0; i < this->max_particles; ++i)
     {
+        
         Particle& p = this->particles[i];
         p.Life -= dt * this->anim_speed; // reduce life
+        
         if (p.Life > 0.0f)
         {	// particle is alive, thus update
             
@@ -40,37 +205,38 @@ void ParticleGenerator::Update(float dt)
                 float tempSpeed = p.speed - p.mass * 9.8f * (p.tLife - p.Life);
                 p.currentPosition.y = p.Position.y + p.Direction.y * tempSpeed * (p.tLife - p.Life);
             }
-
         }
     }
 }
 
 // render all particles
-void ParticleGenerator::Draw(Shader point_shader, Shader quad_shader, glm::mat4 view, glm::mat4 proj)
+void ParticleGenerator::Draw( glm::mat4 view, glm::mat4 proj)
 {
     
     if (opt_point)
     {
-        point_shader.Use();
-        viewLoc = glGetUniformLocation(point_shader.Program, "view");
-        projLoc = glGetUniformLocation(point_shader.Program, "projection");
-        modelLoc = glGetUniformLocation(point_shader.Program, "model");
-        colorLoc = glGetUniformLocation(point_shader.Program, "Color");
-        pointLoc = glGetUniformLocation(point_shader.Program, "point");
+        glUseProgram(this->point_shader);
+        viewLoc = glGetUniformLocation(this->point_shader, "view");
+        projLoc = glGetUniformLocation(this->point_shader, "projection");
+        modelLoc = glGetUniformLocation(this->point_shader, "model");
+        colorLoc = glGetUniformLocation(this->point_shader, "Color");
     }
     else {
-        quad_shader.Use();
-        viewLoc = glGetUniformLocation(quad_shader.Program, "view");
-        projLoc = glGetUniformLocation(quad_shader.Program, "projection");
-        modelLoc = glGetUniformLocation(quad_shader.Program, "model");
-        colorLoc = glGetUniformLocation(quad_shader.Program, "Color");
-        sizeLoc = glGetUniformLocation(quad_shader.Program, "size");
-        pointLoc = glGetUniformLocation(quad_shader.Program, "point");
+        glUseProgram(this->quad_shader);
+        viewLoc = glGetUniformLocation(this->quad_shader, "view");
+        projLoc = glGetUniformLocation(this->quad_shader, "projection");
+        modelLoc = glGetUniformLocation(this->quad_shader, "model");
+        colorLoc = glGetUniformLocation(this->quad_shader, "Color");
+        sizeLoc = glGetUniformLocation(this->quad_shader, "size");
+        texturizedLoc = glGetUniformLocation(this->quad_shader, "texturized");
+        
     }
     
     // Pass the matrices to the shader
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
+
+    glm::vec3 eye =glm::vec3(glm::inverse(view)[3]);
     //quickSort(particles, 0, particles.size()-1);
     for (Particle particle : this->particles)
     {
@@ -81,23 +247,53 @@ void ParticleGenerator::Draw(Shader point_shader, Shader quad_shader, glm::mat4 
                 ident_matrix;
             glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
             glUniform4f(colorLoc, particle.currentColor.x, particle.currentColor.y, particle.currentColor.z, particle.currentColor.w);
-            glUniform1i(pointLoc, opt_point);
+            float distance = (glm::distance(eye, particle.currentPosition) / 5)+0.0001f;
             if (!opt_point)
-                glUniform1f(sizeLoc, particle.size * particle.currentScale);
-            
+            {
+                glUniform1i(texturizedLoc, opt_texture);
+                glUniform1f(sizeLoc, particle.size * particle.currentScale / distance);
+                if (opt_texture)
+                    glBindTexture(GL_TEXTURE_2D, texture);
+            }
             glBindVertexArray(this->pointVAO);
             if (opt_point)
             {
-                glPointSize(particle.size * particle.currentScale);
+                
+                glPointSize(particle.size * particle.currentScale/distance);
                 glDrawArrays(GL_POINTS, 0, this->size/ sizeof(GLfloat));
             }
             else
             {
+                
                 glDrawArrays(GL_POINTS, 0, (this->size*4 ) / sizeof(GLfloat));
             }
-            
         }
     }
+}
+
+void ParticleGenerator::setTexture(unsigned char* data, int width, int height, bool active)
+{
+    this->opt_texture = active;
+    if (active)
+    {
+        glGenTextures(1, &texture);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        // set the texture wrapping/filtering options (on the currently bound texture object)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    
+    
+
+}
+
+bool ParticleGenerator::getTexture()
+{
+    return this->opt_texture;
 }
 
 void ParticleGenerator::setColor(glm::vec4 ini, glm::vec4 fin)
@@ -596,3 +792,4 @@ float ParticleGenerator::modNumber(int n, float div)
         return fmod(n, div);
     }
 }
+

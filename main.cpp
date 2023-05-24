@@ -1,5 +1,6 @@
 
 #include <main.h>
+#include <stb_image.h>
 // GLEW
 // #ifdef GLEW_STATIC
 // #  define GLEWAPI extern
@@ -71,13 +72,10 @@ int main(){
     glEnable(GL_POLYGON_OFFSET_FILL);
     glEnable(GL_BLEND);
     glEnable(GL_ALPHA_TEST);
-    glEnable(GL_PROGRAM_POINT_SIZE);
     glPolygonOffset(1.0, 1.0);
 
     // Build and compile our shader program
     Shader basic_shader("color_shader.vs", "", "color_shader.frag");
-    Shader point_shader("particle_shader.vs", "", "particle_shader.frag");
-    Shader quad_shader("particle_shader.vs", "particle_shader.gs", "particle_shader.frag");
     // Initialize ImGUI
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -378,6 +376,36 @@ int main(){
             }
             else
             {
+                if (!particle_actual->getTexture())
+                {
+                    if (ImGui::Button("Add Texture"))
+                    {
+
+                        string img = openFile();
+                        if (img != "")
+                        {
+                            int width, height, nrChannels;
+                            stbi_set_flip_vertically_on_load(true);
+                            unsigned char* data = stbi_load(img.data(), &width, &height, &nrChannels, 0);
+                            if (data)
+                            {
+                                particle_actual->setTexture(data, width, height, true);
+                                stbi_image_free(data);
+                            }
+                            else
+                            {
+                                std::cout << "Failed to load texture" << std::endl;
+                            }
+
+                        }
+                    }
+                }
+                else {
+                    if (ImGui::Button("Delete Texture"))
+                    {
+                        particle_actual->setTexture(nullptr, 0, 0, false);
+                    }
+                }
                 ImGui::SliderFloat("Size", &particles_size, 1.0f, 3.0f);
                 ImGui::SliderFloat("Size Var", &particles_size_variance, 1.0f, 3.0f);
             }
@@ -465,7 +493,7 @@ int main(){
                 x->setAnimSpeed(opc_anim_speed);
                 x->setGravity(opc_gravity);
                 if (opc_play)x->Update(deltaTime);
-                x->Draw(point_shader, quad_shader, view, projection);
+                x->Draw(view, projection);
             }
             
         }
@@ -482,7 +510,6 @@ int main(){
     ImGui::DestroyContext();
     // Delete all the objects we've created
     glDeleteProgram(basic_shader.Program);
-    glDeleteProgram(point_shader.Program);
     // Terminate GLFW, clearing any resources allocated by GLFW.
     glfwTerminate();
     return 0;

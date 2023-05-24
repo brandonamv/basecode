@@ -4,9 +4,10 @@ out vec4 color;
 
 uniform vec4 Color;
 uniform bool point;
-//uniform sampler2D ourTexture;
+uniform bool texturized;
+uniform sampler2D ourTexture;
 
-//in vec2 TexCoord; 
+in vec2 TexCoord; 
 void main()
 {
     
@@ -17,6 +18,12 @@ void main()
             color = (Color);
     }
     else
-        color = /*texture(ourTexture, TexCoord)*/Color;
+    {
+        if(texturized)
+            color = texture(ourTexture, TexCoord)*Color;
+        else
+            color=Color;
+    }
+        
     
 }  
