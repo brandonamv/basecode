@@ -39,7 +39,43 @@ string openFile() {
     return lTheOpenFileName;
 }
 
+void saveFile(string fileText)
+{
+    char const* lTheSaveFileName;
+    char const* lFilterPatterns[2] = { "*.txt", "*.text" };
 
+    lTheSaveFileName = tinyfd_saveFileDialog(
+        "let us save this password",
+        "particle.txt",
+        2,
+        lFilterPatterns,
+        NULL);
+
+    if (!lTheSaveFileName)
+    {
+        tinyfd_messageBox(
+            "Error",
+            "Save file name is NULL",
+            "ok",
+            "error",
+            1);
+        return;
+    }
+    lIn = fopen(lTheSaveFileName, "w");
+    if (!lIn)
+    {
+        tinyfd_messageBox(
+            "Error",
+            "Can not open this file in write mode",
+            "ok",
+            "error",
+            1);
+        return;
+    }
+    fputs(fileText.data(), lIn);
+    fclose(lIn);
+
+}
 
 // The MAIN function, from here we start the application and run the game loop
 int main(){
@@ -365,6 +401,7 @@ int main(){
             particle_mass = particle_actual->getMass();
             particle_mass_variance = particle_actual->getMassVar();
             particles_point = particle_actual->getOptPoint();
+            
             ImGui::Begin("Particle Menu", &menu_particle, ImGuiWindowFlags_MenuBar);
             ImGui::InputFloat3("Spawn Init", min_box);
             ImGui::InputFloat3("Spawn Fin", max_box);
@@ -492,6 +529,7 @@ int main(){
             {
                 x->setAnimSpeed(opc_anim_speed);
                 x->setGravity(opc_gravity);
+                x->setOptBlending(opc_blending);
                 if (opc_play)x->Update(deltaTime);
                 x->Draw(view, projection);
             }

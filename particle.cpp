@@ -237,7 +237,7 @@ void ParticleGenerator::Draw( glm::mat4 view, glm::mat4 proj)
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
 
     glm::vec3 eye =glm::vec3(glm::inverse(view)[3]);
-    //quickSort(particles, 0, particles.size()-1);
+    if(opt_blending)quickSort(particles, 0, particles.size()-1);
     for (Particle particle : this->particles)
     {
         if (particle.Life > 0.0f)
@@ -536,6 +536,30 @@ bool ParticleGenerator::getOptPoint()
 {
     return this->opt_point;
 }
+
+void ParticleGenerator::setOptBlending(bool o)
+{
+    opt_blending = o;
+}
+
+std::string ParticleGenerator::save()
+{
+    std::string temp="#";
+    temp.append("spawn_min " + std::to_string(spawn_min.x) + " " + std::to_string(spawn_min.y) + " " + std::to_string(spawn_min.z));
+    temp.append("spawn_max " + std::to_string(spawn_max.x) + " " + std::to_string(spawn_max.y) + " " + std::to_string(spawn_max.z));
+    temp.append("color_ini " + std::to_string(color_ini.x) + " " + std::to_string(color_ini.y) + " " + std::to_string(color_ini.z) + " " + std::to_string(color_ini.w));
+    temp.append("color_ini_var " + std::to_string(color_ini_variance.x) + " " + std::to_string(color_ini_variance.y) + " " + std::to_string(color_ini_variance.z) + " " + std::to_string(color_ini_variance.w));
+    temp.append("color_fin " + std::to_string(color_fin.x) + " " + std::to_string(color_fin.y) + " " + std::to_string(color_fin.z) + " " + std::to_string(color_fin.w));
+    temp.append("color_fin_var " + std::to_string(color_fin_variance.x) + " " + std::to_string(color_fin_variance.y) + " " + std::to_string(color_fin_variance.z) + " " + std::to_string(color_fin_variance.w));
+    temp.append("direction " + std::to_string(direction.x) + " " + std::to_string(direction.y) + " " + std::to_string(direction.z));
+    temp.append("direction_var " + std::to_string(direction_variance.x) + " " + std::to_string(direction_variance.y) + " " + std::to_string(direction_variance.z));
+    temp.append("dirDesviation " + std::to_string(dirDesviation.x) + " " + std::to_string(dirDesviation.y) + " " + std::to_string(dirDesviation.z));
+    temp.append("dirDesviation_var " + std::to_string(dirDesviation_var.x) + " " + std::to_string(dirDesviation_var.y) + " " + std::to_string(dirDesviation_var.z));
+
+    return std::string();
+}
+
+
 
 int ParticleGenerator::partition(std::vector<Particle>& arr, int start, int end)
 {
