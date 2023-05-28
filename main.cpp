@@ -303,10 +303,9 @@ int main(){
         ImGui::Separator();
         ImGui::Text("Camera Speed");
         ImGui::SliderFloat("s_cam", &opc_camera_speed, 0.1f, 30.0f);
-        cam->setcameraSpeed(opc_camera_speed,deltaTime);
+        cam->setcameraSpeed(opc_camera_speed, deltaTime);
         ImGui::Separator();
-        ImGui::Checkbox("Blending", &opc_blending);/*
-        ImGui::gizmo3D("guizmo", light);*/
+        ImGui::Checkbox("Blending", &opc_blending);
         if (opc_blending)
         {
             glEnable(GL_BLEND);
@@ -364,7 +363,170 @@ int main(){
         else {
             glDisable(GL_BLEND);
         }
+        if (ImGui::Button("Load Config"))
+        {
+            string tempS = openFile();
+            if (tempS!="")
+            {
+                FILE* file;
+                char actual_line[128] = { 0 };
+                if (fopen_s(&file, tempS.data(), "r") != 0)
+                {
+                    printf("Error al cargar el objeto!\n");
+                    
+                }
+                else {
+                    while (1)
+                    {
+                        if (fscanf(file, "%127s", &actual_line) == EOF)
+                            break;
 
+                        if (strcmp(actual_line, "R_particles_size") == 0)
+                        {
+                            if (!verify(.0f, file, R_particles_size[0], R_particles_size[1],actual_line))
+                                break;
+                            else
+                                continue;
+                        }
+                        if (strcmp(actual_line, "R_particles_size_variance") == 0)
+                        {
+                            if (!verify(.0f, file, R_particles_size_variance[0], R_particles_size_variance[1],actual_line))
+                                break;
+                            else
+                                continue;
+                        }
+                        if (strcmp(actual_line, "R_particles_size_quad") == 0)
+                        {
+                            if (!verify(.0f, file, R_particles_size_quad[0], R_particles_size_quad[1],actual_line))
+                                break;
+                            else
+                                continue;
+                        }
+                        if (strcmp(actual_line, "R_particles_size_variance_quad") == 0)
+                        {
+                            if (!verify(.0f, file, R_particles_size_variance_quad[0], R_particles_size_variance_quad[1],actual_line))
+                                break;
+                            else
+                                continue;
+                        }
+                        if (strcmp(actual_line, "R_particles_max") == 0)
+                        {
+                            if (!verify(1, file, R_particles_max[0], R_particles_max[1],actual_line))
+                                break;
+                            else
+                                continue;
+                        }
+                        if (strcmp(actual_line, "R_particles_generation") == 0)
+                        {
+                            if (!verify(1, file, R_particles_generation[0], R_particles_generation[1],actual_line))
+                                break;
+                            else
+                                continue;
+                        }
+                        if (strcmp(actual_line, "R_particles_generation_variance") == 0)
+                        {
+                            if (!verify(0, file, R_particles_generation_variance[0], R_particles_generation_variance[1],actual_line))
+                                break;
+                            else
+                                continue;
+                        }
+                        if (strcmp(actual_line, "R_particles_life") == 0)
+                        {
+                            if (!verify(.1f, file, R_particles_life[0], R_particles_life[1],actual_line))
+                                break;
+                            else
+                                continue;
+                        }
+                        if (strcmp(actual_line, "R_particles_life_variance") == 0)
+                        {
+                            if (!verify(.0f, file, R_particles_life_variance[0], R_particles_life_variance[1],actual_line))
+                                break;
+                            else
+                                continue;
+                        }
+                        if (strcmp(actual_line, "R_particles_speed") == 0)
+                        {
+                            if (!verify(.0f, file, R_particles_speed[0], R_particles_speed[1],actual_line))
+                                break;
+                            else
+                                continue;
+                        }
+                        if (strcmp(actual_line, "R_particles_speed_variance") == 0)
+                        {
+                            if (!verify(.0f, file, R_particles_speed_variance[0], R_particles_speed_variance[1],actual_line))
+                                break;
+                            else
+                                continue;
+                        }
+                        if (strcmp(actual_line, "R_particles_scale_ini") == 0)
+                        {
+                            if (!verify(.0f, file, R_particles_scale_ini[0], R_particles_scale_ini[1],actual_line))
+                                break;
+                            else
+                                continue;
+                        }
+                        if (strcmp(actual_line, "R_particles_scale_ini_variance") == 0)
+                        {
+                            if (!verify(.0f, file, R_particles_scale_ini_variance[0], R_particles_scale_ini_variance[1],actual_line))
+                                break;
+                            else
+                                continue;
+                        }
+                        if (strcmp(actual_line, "R_particles_scale_fin") == 0)
+                        {
+                            if (!verify(.0f, file, R_particles_speed[0], R_particles_speed[1],actual_line))
+                                break;
+                            else
+                                continue;
+                        }
+                        if (strcmp(actual_line, "R_particles_scale_fin_variance") == 0)
+                        {
+                            if (!verify(.0f, file, R_particles_speed[0], R_particles_speed[1],actual_line))
+                                break;
+                            else
+                                continue;
+                        }
+                        if (strcmp(actual_line, "R_color_ini_variance") == 0)
+                        {
+                            if (!verify(.0f, 1.0f, file, R_color_ini_variance[0], R_color_ini_variance[1],actual_line))
+                                break;
+                            else
+                                continue;
+                        }
+                        if (strcmp(actual_line, "R_color_fin_variance") == 0)
+                        {
+                            if (!verify(.0f, 1.0f , file, R_color_fin_variance[0], R_color_fin_variance[1],actual_line))
+                                break;
+                            else
+                                continue;
+                        }
+                        if (strcmp(actual_line, "R_particles_desviation") == 0)
+                        {
+                            if (!verify(-1.0f, 1.0f, file, R_particles_desviation[0], R_particles_desviation[1],actual_line))
+                                break;
+                            else
+                                continue;
+                        }
+                        if (strcmp(actual_line, "R_particles_desviation_variance") == 0)
+                        {
+                            if (!verify(.0f, 1.0f, file, R_particles_desviation_variance[0], R_particles_desviation_variance[1],actual_line))
+                                break;
+                            else
+                                continue;
+                        }
+                        if (strcmp(actual_line, "R_particles_direction_variance") == 0)
+                        {
+                            if (!verify(.0f, 1.0f, file, R_particles_direction_variance[0], R_particles_direction_variance[1],actual_line))
+                                break;
+                            else
+                                continue;
+                        }
+                    }
+                }
+
+                
+            }
+        }
         if (ImGui::Button("New Particles"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
         {
             particle_system.push_back(new ParticleGenerator());
@@ -378,8 +540,24 @@ int main(){
                 particle_system.clear();
             if (particle_system.size()>1)
             {
-
+                if (ImGui::Button("Next Particle System"))
+                {
+                    for (int i = 0; i < particle_system.size()-1; i++)
+                    {
+                        if (particle_actual==particle_system[i])
+                            particle_actual = particle_system[i + 1];
+                    }
+                }
+                if (ImGui::Button("Previous Particle System"))
+                {
+                    for (int i = 1; i < particle_system.size(); i++)
+                    {
+                        if (particle_actual == particle_system[i])
+                            particle_actual = particle_system[i - 1];
+                    }
+                }
             }
+            ImGui::Separator();
             ImGui::Text("Animation Speed");
             ImGui::SliderFloat("s_ptcle", &opc_anim_speed, 0.1f, 10.0f);
             ImGui::Checkbox("Gravity", &opc_gravity);
@@ -764,6 +942,108 @@ void do_movement(GLfloat delta)
     if (keys[GLFW_KEY_S])
         cam->move_back();
 }
+
+bool verify(int min, FILE* f, int& a, int& b, char* s)
+{
+    int tempI[2]{};
+    if (fscanf_s(f, "%d %d\n", &tempI[0], &tempI[1]) != 2)
+    {
+        tinyfd_messageBox(
+            "Error",
+            string("Error File Format in " + string(s)).data(),
+            "ok",
+            "error",
+            1);
+        return false;
+    }
+    if (tempI[0] < min || tempI[1] < min || tempI[0] == tempI[1])
+    {
+        tinyfd_messageBox(
+            "Error",
+            string("Error File Range in "+string(s)).data(),
+            "ok",
+            "error",
+            1);
+        return false;
+    }
+    if (tempI[0] > tempI[1])
+    {
+        int tempii = tempI[0];
+        tempI[0] = tempI[1];
+        tempI[0] = tempii;
+    }
+    a = tempI[0];
+    b = tempI[1];
+    return true;
+}
+
+bool verify(float min,float max, FILE* f, float& a, float& b, char* s)
+{
+    float tempF[2]{};
+    if (fscanf_s(f, "%f %f\n", &tempF[0], &tempF[1]) != 2)
+    {
+        tinyfd_messageBox(
+            "Error",
+            string("Error File Format in " + string(s)).data(),
+            "ok",
+            "error",
+            1);
+        return false;
+    }
+    if (tempF[0] < min || tempF[1] < min || tempF[1]>max || tempF[0] == tempF[1])
+    {
+        tinyfd_messageBox(
+            "Error",
+            string("Error File Range in " + string(s)).data(),
+            "ok",
+            "error",
+            1);
+        return false;
+    }
+    if (tempF[0] > tempF[1])
+    {
+        int tempff = tempF[0];
+        tempF[0] = tempF[1];
+        tempF[0] = tempff;
+    }
+    a = tempF[0];
+    b = tempF[1];
+    return true;
+}bool verify(float min, FILE* f, float& a, float& b, char* s)
+{
+    float tempF[2]{};
+    if (fscanf_s(f, "%f %f\n", &tempF[0], &tempF[1]) != 2)
+    {
+        tinyfd_messageBox(
+            "Error",
+            string("Error File Format in " + string(s)).data(),
+            "ok",
+            "error",
+            1);
+        return false;
+    }
+    if (tempF[0] < min || tempF[1] < min || tempF[0] == tempF[1])
+    {
+        tinyfd_messageBox(
+            "Error",
+            string("Error File Range in " + string(s)).data(),
+            "ok",
+            "error",
+            1);
+        return false;
+    }
+    if (tempF[0] > tempF[1])
+    {
+        int tempff = tempF[0];
+        tempF[0] = tempF[1];
+        tempF[0] = tempff;
+    }
+    a = tempF[0];
+    b = tempF[1];
+    return true;
+}
+
+
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {

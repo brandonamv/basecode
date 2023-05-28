@@ -808,7 +808,17 @@ void ParticleGenerator::Update(float dt)
     
     // add new particles 
     this->secondCounter+= dt * this->anim_speed;
-    int newParticles = this->new_particles + iterator[rand() % 2] * rand()%this->new_particles_variance;
+    int newParticles;
+    if (this->new_particles_variance==0)
+    {
+        newParticles = this->new_particles;
+    }
+    else {
+        newParticles= this->new_particles + iterator[rand() % 2] * rand() % this->new_particles_variance;
+        if (newParticles==0)
+            newParticles++;
+    }
+     
     if (this->secondCounter >= 1.0f/ newParticles)
     {
         int unusedParticle = this->firstUnusedParticle();
