@@ -56,6 +56,10 @@ public:
     float* getDirection();
     void setDirectionVar(glm::vec3 dir);
     float* getDirectionVar();
+    void setDesviation(glm::vec3 dir);
+    float* getDeviation();
+    void setDesviationVar(glm::vec3 dir);
+    float* getDeviationVar();
     void setMaxParticles(int n);
     int getMaxParticles();
     void setNewParticles(int n);
@@ -101,6 +105,7 @@ private:
     void quickSort(std::vector<Particle>& arr, int start, int end);
     // state
     std::vector<Particle> particles;
+    std::vector <Particle> aliveP;
     //particles options
     glm::vec3 spawn_min=glm::vec3(-1.0f), spawn_max = glm::vec3(1.0f); //area de spawn
     glm::vec4 color_ini = glm::vec4(1.0f), color_fin = glm::vec4(.1f); //colores

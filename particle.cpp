@@ -24,17 +24,20 @@ ParticleGenerator::ParticleGenerator()
         "layout(triangle_strip, max_vertices = 4) out;\n"
         "out vec2 TexCoord;\n"
         "uniform float size;\n"
+        "uniform mat4 projection;\n"
+        "uniform mat4 view;\n"
+        "uniform mat4 model;\n"
         "void main() {\n"
-        "   gl_Position = gl_in[0].gl_Position + vec4(-size, -size, 0.0, 0.0);\n"
-        "   TexCoord = vec2(0.0, 0.0);\n"
+        "    gl_Position = projection * view * model * (gl_in[0].gl_Position + vec4(-size, -size, 0.0, 0.0));\n"
+        "    TexCoord = vec2(0.0, 0.0);\n"
         "    EmitVertex();\n"
-        "    gl_Position = gl_in[0].gl_Position + vec4(size, -size, 0.0, 0.0);\n"
+        "    gl_Position = projection * view * model * (gl_in[0].gl_Position + vec4(size, -size, 0.0, 0.0));\n"
         "    TexCoord = vec2(1.0, 0.0);\n"
         "    EmitVertex();\n"
-        "   gl_Position = gl_in[0].gl_Position + vec4(-size, size, 0.0, 0.0);\n"
+        "    gl_Position = projection * view * model * (gl_in[0].gl_Position + vec4(-size, size, 0.0, 0.0));\n"
         "    TexCoord = vec2(0.0, 1.0);\n"
         "    EmitVertex();\n"
-        "    gl_Position = gl_in[0].gl_Position + vec4(size, size, 0.0, 0.0);\n"
+        "    gl_Position = projection * view * model * (gl_in[0].gl_Position + vec4(size, size, 0.0, 0.0));\n"
         "    TexCoord = vec2(1.0, 1.0);\n"
         "    EmitVertex();\n"
         "    EndPrimitive();\n"
@@ -48,8 +51,10 @@ ParticleGenerator::ParticleGenerator()
         "in vec2 TexCoord;\n"
         "void main()\n"
         "{\n"
-        "    if (texturized)\n"
-        "        color = texture(ourTexture, TexCoord) * Color;\n"
+        "    if (texturized){\n"
+        "        vec4 temp = texture(ourTexture, TexCoord) * Color;\n"
+        "        if(temp.a==0)discard;\n"
+        "        color = temp;}\n"
         "    else\n"
         "        color = Color;\n"
         "}";
@@ -170,111 +175,32 @@ ParticleGenerator::ParticleGenerator()
     glDeleteShader(fragment);
     this->init();
 }
-void ParticleGenerator::Update(float dt)
+
+void ParticleGenerator::init()
 {
-    
-    // add new particles 
-    this->secondCounter+= dt * this->anim_speed;
-    int newParticles = this->new_particles + iterator[rand() % 2] * rand()%this->new_particles_variance;
-    if (this->secondCounter >= 1.0f/ newParticles)
-    {
-        int unusedParticle = this->firstUnusedParticle();
-        if (unusedParticle >= 0)
-            this->respawnParticle(this->particles[unusedParticle]);
-        
-        this->secondCounter = .0f;
+    GLfloat point[] = { .0f,.0f,.0f };
+
+    glGenVertexArrays(1, &this->pointVAO);
+    glBindVertexArray(this->pointVAO);
+
+    glGenBuffers(1, &this->pointVBO);
+    this->size = sizeof(point);
+    // fill mesh buffer
+    glBindBuffer(GL_ARRAY_BUFFER, this->pointVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(point), point, GL_STATIC_DRAW);
+    // set mesh attributes
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(0);
+    // create this->amount default particle instances
+    for (unsigned int i = 0; i < this->max_particles; ++i) {
+        Particle temp;
+        temp.id = i;
+        this->particles.push_back(temp);
     }
-    // update all particles
-    for (unsigned int i = 0; i < this->max_particles; ++i)
-    {
-        
-        Particle& p = this->particles[i];
-        p.Life -= dt * this->anim_speed; // reduce life
-        
-        if (p.Life > 0.0f)
-        {	// particle is alive, thus update
-            
-            float t = p.Life / p.tLife;
-            p.currentColor = t * p.Color + (1 - t) * p.finColor;
-            p.currentScale = t * p.scale + (1 - t) * p.scaleFin;
-            if (fmod(rand(), 1000 / this->anim_speed) == 0) p.Direction.x += p.deviation.x;
-            if (fmod(rand() , 1000 / this->anim_speed) == 0) p.Direction.y += p.deviation.y;
-            if (fmod(rand() , 1000 / this->anim_speed) == 0) p.Direction.z += p.deviation.z;
-            p.Direction = glm::normalize(p.Direction);
-            p.currentPosition = p.Position + p.Direction * p.speed * (p.tLife - p.Life);
-            if (this->opt_mass)
-            {
-                float tempSpeed = p.speed - p.mass * 9.8f * (p.tLife - p.Life);
-                p.currentPosition.y = p.Position.y + p.Direction.y * tempSpeed * (p.tLife - p.Life);
-            }
-        }
-    }
-    if (opt_blending)quickSort(particles, 0, particles.size() - 1);
+
 }
 
-// render all particles
-void ParticleGenerator::Draw( glm::mat4 view, glm::mat4 proj)
-{
-    
-    if (opt_point)
-    {
-        glUseProgram(this->point_shader);
-        viewLoc = glGetUniformLocation(this->point_shader, "view");
-        projLoc = glGetUniformLocation(this->point_shader, "projection");
-        modelLoc = glGetUniformLocation(this->point_shader, "model");
-        colorLoc = glGetUniformLocation(this->point_shader, "Color");
-    }
-    else {
-        glUseProgram(this->quad_shader);
-        viewLoc = glGetUniformLocation(this->quad_shader, "view");
-        projLoc = glGetUniformLocation(this->quad_shader, "projection");
-        modelLoc = glGetUniformLocation(this->quad_shader, "model");
-        colorLoc = glGetUniformLocation(this->quad_shader, "Color");
-        sizeLoc = glGetUniformLocation(this->quad_shader, "size");
-        texturizedLoc = glGetUniformLocation(this->quad_shader, "texturized");
-        
-    }
-    
-    // Pass the matrices to the shader
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
-
-    glm::vec3 eye =glm::vec3(glm::inverse(view)[3]);
-    
-    for (Particle particle : this->particles)
-    {
-        if (particle.Life > 0.0f)
-        {
-            glm::mat4 model =
-                glm::translate(glm::mat4(1.0f), particle.currentPosition) *
-                ident_matrix;
-            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-            glUniform4f(colorLoc, particle.currentColor.x, particle.currentColor.y, particle.currentColor.z, particle.currentColor.w);
-            float distance = (glm::distance(eye, particle.currentPosition) / 5)+0.0001f;
-            if (!opt_point)
-            {
-                glUniform1i(texturizedLoc, opt_texture);
-                glUniform1f(sizeLoc, particle.size * particle.currentScale / distance);
-                if (opt_texture)
-                    glBindTexture(GL_TEXTURE_2D, texture);
-            }
-            glBindVertexArray(this->pointVAO);
-            if (opt_point)
-            {
-                
-                glPointSize(particle.size * particle.currentScale/distance);
-                glDrawArrays(GL_POINTS, 0, this->size/ sizeof(GLfloat));
-            }
-            else
-            {
-                
-                glDrawArrays(GL_POINTS, 0, (this->size*4 ) / sizeof(GLfloat));
-            }
-        }
-    }
-}
-
-void ParticleGenerator::setTexture(unsigned char* data, int width, int height, bool active,std::string img)
+void ParticleGenerator::setTexture(unsigned char* data, int width, int height, bool active, std::string img)
 {
     this->opt_texture = active;
     textureData = img;
@@ -287,18 +213,18 @@ void ParticleGenerator::setTexture(unsigned char* data, int width, int height, b
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        if (img[img.find_last_of(".")+1]=='j')
+        if (img[img.find_last_of(".") + 1] == 'j')
         {
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
         }
         else {
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
         }
-        
+
         glGenerateMipmap(GL_TEXTURE_2D);
     }
-    
-    
+
+
 
 }
 
@@ -320,7 +246,7 @@ void ParticleGenerator::setColor(glm::vec4 ini, glm::vec4 fin)
 
 float* ParticleGenerator::getInitColor()
 {
-    float color[4] = {this->color_ini.x,this->color_ini.y,this->color_ini.z,this->color_ini.w};
+    float color[4] = { this->color_ini.x,this->color_ini.y,this->color_ini.z,this->color_ini.w };
     return color;
 }
 
@@ -357,7 +283,7 @@ void ParticleGenerator::setMinMax(glm::vec3 min, glm::vec3 max)
 
 float* ParticleGenerator::getMin()
 {
-    float vec[3] = { this->spawn_min.x,this->spawn_min.y,this->spawn_min.z};
+    float vec[3] = { this->spawn_min.x,this->spawn_min.y,this->spawn_min.z };
     return vec;
 }
 
@@ -386,6 +312,28 @@ void ParticleGenerator::setDirectionVar(glm::vec3 dir)
 float* ParticleGenerator::getDirectionVar()
 {
     float vec[3] = { this->direction_variance.x,this->direction_variance.y,this->direction_variance.z };
+    return vec;
+}
+
+void ParticleGenerator::setDesviation(glm::vec3 dir)
+{
+    this->dirDesviation = dir;
+}
+
+float* ParticleGenerator::getDeviation()
+{
+    float vec[3] = { this->dirDesviation.x,this->dirDesviation.y,this->dirDesviation.z };
+    return vec;
+}
+
+void ParticleGenerator::setDesviationVar(glm::vec3 dir)
+{
+    this->dirDesviation_var = dir;
+}
+
+float* ParticleGenerator::getDeviationVar()
+{
+    float vec[3] = { this->dirDesviation_var.x,this->dirDesviation_var.y,this->dirDesviation_var.z };
     return vec;
 }
 
@@ -422,7 +370,7 @@ int ParticleGenerator::getNewParticlesVariance()
 
 void ParticleGenerator::setAnimSpeed(float n)
 {
-    this->anim_speed= n;
+    this->anim_speed = n;
 }
 
 void ParticleGenerator::setGravity(bool opt)
@@ -525,7 +473,7 @@ float ParticleGenerator::getScaleFinVar()
 
 void ParticleGenerator::setMass(float m)
 {
-    this->mass=m;
+    this->mass = m;
 }
 
 float ParticleGenerator::getMass()
@@ -560,7 +508,7 @@ void ParticleGenerator::setOptBlending(bool o)
 
 std::string ParticleGenerator::save()
 {
-    std::string temp="";
+    std::string temp = "";
     temp.append("spawn_min " + std::to_string(spawn_min.x) + " " + std::to_string(spawn_min.y) + " " + std::to_string(spawn_min.z) + "\n");
     temp.append("spawn_max " + std::to_string(spawn_max.x) + " " + std::to_string(spawn_max.y) + " " + std::to_string(spawn_max.z) + "\n");
     temp.append("color_ini " + std::to_string(color_ini.x) + " " + std::to_string(color_ini.y) + " " + std::to_string(color_ini.z) + " " + std::to_string(color_ini.w) + "\n");
@@ -588,14 +536,14 @@ std::string ParticleGenerator::save()
     temp.append("new_particles_variance " + std::to_string(new_particles_variance) + "\n");
     temp.append("max_particles " + std::to_string(max_particles) + "\n");
     temp.append("point " + std::to_string(opt_point) + "\n");
-    if (!opt_point&&opt_texture)
+    if (!opt_point && opt_texture)
     {
         temp.append("texture " + std::to_string(opt_texture) + "\n");
         temp.append("texture_img " + textureData + "\n");
     }
-    for (Particle p:this->particles)
+    for (Particle p : this->particles)
     {
-        if (p.Life>0.0f)
+        if (p.Life > 0.0f)
         {
             temp.append("Position " + std::to_string(p.Position.x) + " " + std::to_string(p.Position.y) + " " + std::to_string(p.Position.z) + "\n");
             temp.append("Direction " + std::to_string(p.Direction.x) + " " + std::to_string(p.Direction.y) + " " + std::to_string(p.Direction.z) + "\n");
@@ -620,7 +568,7 @@ std::string ParticleGenerator::save()
 void ParticleGenerator::load(std::string t)
 {
     FILE* file;
-    char actual_line[128]={0};
+    char actual_line[128] = { 0 };
     char tempS[128] = { 0 };
     if (fopen_s(&file, t.data(), "r") != 0)
     {
@@ -639,213 +587,213 @@ void ParticleGenerator::load(std::string t)
         if (fscanf(file, "%127s", &actual_line) == EOF)
             break;
 
-        if (strcmp(actual_line, "spawn_min") == 0) 
+        if (strcmp(actual_line, "spawn_min") == 0)
         {
             fscanf_s(file, "%f %f %f\n", &tempV.x, &tempV.y, &tempV.z);
             this->spawn_min = tempV;
         }
-        if (strcmp(actual_line, "spawn_max") == 0) 
+        if (strcmp(actual_line, "spawn_max") == 0)
         {
             fscanf_s(file, "%f %f %f\n", &tempV.x, &tempV.y, &tempV.z);
             this->spawn_max = tempV;
         }
-        if (strcmp(actual_line, "color_ini") == 0) 
+        if (strcmp(actual_line, "color_ini") == 0)
         {
             fscanf_s(file, "%f %f %f %f\n", &tempC.x, &tempC.y, &tempC.z, &tempC.w);
             this->color_ini = tempC;
         }
-        if (strcmp(actual_line, "color_ini_var") == 0) 
+        if (strcmp(actual_line, "color_ini_var") == 0)
         {
             fscanf_s(file, "%f %f %f %f\n", &tempC.x, &tempC.y, &tempC.z, &tempC.w);
             this->color_ini_variance = tempC;
         }
-        if (strcmp(actual_line, "color_fin") == 0) 
+        if (strcmp(actual_line, "color_fin") == 0)
         {
             fscanf_s(file, "%f %f %f %f\n", &tempC.x, &tempC.y, &tempC.z, &tempC.w);
             this->color_fin = tempC;
 
         }
-        if (strcmp(actual_line, "color_fin_var") == 0) 
+        if (strcmp(actual_line, "color_fin_var") == 0)
         {
             fscanf_s(file, "%f %f %f %f\n", &tempC.x, &tempC.y, &tempC.z, &tempC.w);
             this->color_fin_variance = tempC;
         }
-        if (strcmp(actual_line, "direction") == 0) 
+        if (strcmp(actual_line, "direction") == 0)
         {
             fscanf_s(file, "%f %f %f\n", &tempV.x, &tempV.y, &tempV.z);
             this->direction = tempV;
         }
-        if (strcmp(actual_line, "dirDesviation") == 0) 
+        if (strcmp(actual_line, "dirDesviation") == 0)
         {
             fscanf_s(file, "%f %f %f\n", &tempV.x, &tempV.y, &tempV.z);
             this->dirDesviation = tempV;
 
         }
-        if (strcmp(actual_line, "direction_var") == 0) 
+        if (strcmp(actual_line, "direction_var") == 0)
         {
             fscanf_s(file, "%f %f %f\n", &tempV.x, &tempV.y, &tempV.z);
             this->direction_variance = tempV;
         }
-        if (strcmp(actual_line, "dirDesviation_var") == 0) 
+        if (strcmp(actual_line, "dirDesviation_var") == 0)
         {
             fscanf_s(file, "%f %f %f\n", &tempV.x, &tempV.y, &tempV.z);
             this->dirDesviation_var = tempV;
         }
-        if (strcmp(actual_line, "speed") == 0) 
+        if (strcmp(actual_line, "speed") == 0)
         {
             fscanf_s(file, "%f\n", &tempF);
             this->speed = tempF;
         }
-        if (strcmp(actual_line, "speed_variance") == 0) 
+        if (strcmp(actual_line, "speed_variance") == 0)
         {
             fscanf_s(file, "%f\n", &tempF);
             this->speed_variance = tempF;
         }
-        if (strcmp(actual_line, "scale_ini") == 0) 
+        if (strcmp(actual_line, "scale_ini") == 0)
         {
             fscanf_s(file, "%f\n", &tempF);
             this->scale_ini = tempF;
         }
-        if (strcmp(actual_line, "scale_ini_var") == 0) 
+        if (strcmp(actual_line, "scale_ini_var") == 0)
         {
             fscanf_s(file, "%f\n", &tempF);
             this->scale_ini_var = tempF;
         }
-        if (strcmp(actual_line, "scale_fin") == 0) 
+        if (strcmp(actual_line, "scale_fin") == 0)
         {
             fscanf_s(file, "%f\n", &tempF);
             this->scale_fin = tempF;
         }
-        if (strcmp(actual_line, "scale_fin_var") == 0) 
+        if (strcmp(actual_line, "scale_fin_var") == 0)
         {
             fscanf_s(file, "%f\n", &tempF);
             this->scale_fin_var = tempF;
         }
-        if (strcmp(actual_line, "mass") == 0) 
+        if (strcmp(actual_line, "mass") == 0)
         {
             fscanf_s(file, "%f\n", &tempF);
             this->mass = tempF;
         }
-        if (strcmp(actual_line, "mass_variance") == 0) 
+        if (strcmp(actual_line, "mass_variance") == 0)
         {
             fscanf_s(file, "%f\n", &tempF);
             this->mass_variance = tempF;
         }
-        if (strcmp(actual_line, "anim_speed") == 0) 
+        if (strcmp(actual_line, "anim_speed") == 0)
         {
             fscanf_s(file, "%f\n", &tempF);
             this->anim_speed = tempF;
         }
-        if (strcmp(actual_line, "lifetime") == 0) 
+        if (strcmp(actual_line, "lifetime") == 0)
         {
             fscanf_s(file, "%f\n", &tempF);
             this->lifetime = tempF;
         }
-        if (strcmp(actual_line, "lifetime_var") == 0) 
+        if (strcmp(actual_line, "lifetime_var") == 0)
         {
             fscanf_s(file, "%f\n", &tempF);
             this->lifetime_var = tempF;
         }
-        if (strcmp(actual_line, "size_particle") == 0) 
+        if (strcmp(actual_line, "size_particle") == 0)
         {
             fscanf_s(file, "%f\n", &tempF);
             this->size_particle = tempF;
         }
-        if (strcmp(actual_line, "size_variance") == 0) 
+        if (strcmp(actual_line, "size_variance") == 0)
         {
             fscanf_s(file, "%f\n", &tempF);
             this->size_variance = tempF;
         }
-        if (strcmp(actual_line, "new_particles") == 0) 
+        if (strcmp(actual_line, "new_particles") == 0)
         {
             fscanf_s(file, "%d\n", &tempI);
             this->new_particles = tempI;
         }
-        if (strcmp(actual_line, "new_particles_variance") == 0) 
+        if (strcmp(actual_line, "new_particles_variance") == 0)
         {
             fscanf_s(file, "%d\n", &tempI);
             this->new_particles_variance = tempI;
         }
-        if (strcmp(actual_line, "max_particles") == 0) 
+        if (strcmp(actual_line, "max_particles") == 0)
         {
             fscanf_s(file, "%d\n", &tempI);
             this->max_particles = tempI;
             this->particles.resize(this->max_particles);
-            
+
         }
-        if (strcmp(actual_line, "point") == 0) 
+        if (strcmp(actual_line, "point") == 0)
         {
             fscanf_s(file, "%d\n", &tempI);
-            this->opt_point = tempI==1;
+            this->opt_point = tempI == 1;
         }
-        if (strcmp(actual_line, "texture") == 0) 
+        if (strcmp(actual_line, "texture") == 0)
         {
             fscanf_s(file, "%d\n", &tempI);
-            this->opt_texture = tempI==1;
+            this->opt_texture = tempI == 1;
         }
-        if (strcmp(actual_line, "texture_img") == 0) 
+        if (strcmp(actual_line, "texture_img") == 0)
         {
-            if(fscanf(file, "%127s", &tempS)!=EOF)
+            if (fscanf(file, "%127s", &tempS) != EOF)
                 this->textureData = tempS;
         }
-        if (strcmp(actual_line, "Position") == 0) 
+        if (strcmp(actual_line, "Position") == 0)
         {
             count++;
             fscanf_s(file, "%f %f %f\n", &temp.Position.x, &temp.Position.y, &temp.Position.z);
         }
-        if (strcmp(actual_line, "Direction") == 0) 
+        if (strcmp(actual_line, "Direction") == 0)
         {
             fscanf_s(file, "%f %f %f\n", &temp.Direction.x, &temp.Direction.y, &temp.Direction.z);
         }
-        if (strcmp(actual_line, "CurrentPosition") == 0) 
+        if (strcmp(actual_line, "CurrentPosition") == 0)
         {
             fscanf_s(file, "%f %f %f\n", &temp.currentPosition.x, &temp.currentPosition.y, &temp.currentPosition.z);
         }
-        if (strcmp(actual_line, "Deviation") == 0) 
+        if (strcmp(actual_line, "Deviation") == 0)
         {
             fscanf_s(file, "%f %f %f\n", &temp.deviation.x, &temp.deviation.y, &temp.deviation.z);
         }
-        if (strcmp(actual_line, "Color") == 0) 
+        if (strcmp(actual_line, "Color") == 0)
         {
             fscanf_s(file, "%f %f %f %f\n", &temp.Color.x, &temp.Color.y, &temp.Color.z, &temp.Color.w);
         }
-        if (strcmp(actual_line, "FinColor") == 0) 
+        if (strcmp(actual_line, "FinColor") == 0)
         {
             fscanf_s(file, "%f %f %f %f\n", &temp.finColor.x, &temp.finColor.y, &temp.finColor.z, &temp.finColor.w);
         }
-        if (strcmp(actual_line, "CurrentColor") == 0) 
+        if (strcmp(actual_line, "CurrentColor") == 0)
         {
             fscanf_s(file, "%f %f %f %f\n", &temp.currentColor.x, &temp.currentColor.y, &temp.currentColor.z, &temp.currentColor.w);
         }
-        if (strcmp(actual_line, "Speed") == 0) 
+        if (strcmp(actual_line, "Speed") == 0)
         {
             fscanf_s(file, "%f\n", &temp.speed);
         }
-        if (strcmp(actual_line, "CurrentScale") == 0) 
+        if (strcmp(actual_line, "CurrentScale") == 0)
         {
             fscanf_s(file, "%f\n", &temp.currentScale);
         }
-        if (strcmp(actual_line, "Scale") == 0) 
+        if (strcmp(actual_line, "Scale") == 0)
         {
             fscanf_s(file, "%f\n", &temp.scale);
         }
-        if (strcmp(actual_line, "ScaleFin") == 0) 
+        if (strcmp(actual_line, "ScaleFin") == 0)
         {
             fscanf_s(file, "%f\n", &temp.scaleFin);
         }
-        if (strcmp(actual_line, "Size") == 0) 
+        if (strcmp(actual_line, "Size") == 0)
         {
             fscanf_s(file, "%f\n", &temp.size);
         }
-        if (strcmp(actual_line, "Life") == 0) 
+        if (strcmp(actual_line, "Life") == 0)
         {
             fscanf_s(file, "%f\n", &temp.Life);
         }
-        if (strcmp(actual_line, "tLife") == 0) 
+        if (strcmp(actual_line, "tLife") == 0)
         {
             fscanf_s(file, "%f\n", &temp.tLife);
         }
-        if (strcmp(actual_line, "Mass") == 0) 
+        if (strcmp(actual_line, "Mass") == 0)
         {
             fscanf_s(file, "%f\n", &temp.mass);
             temp.id = count;
@@ -855,52 +803,138 @@ void ParticleGenerator::load(std::string t)
     }
 }
 
+void ParticleGenerator::Update(float dt)
+{
+    
+    // add new particles 
+    this->secondCounter+= dt * this->anim_speed;
+    int newParticles = this->new_particles + iterator[rand() % 2] * rand()%this->new_particles_variance;
+    if (this->secondCounter >= 1.0f/ newParticles)
+    {
+        int unusedParticle = this->firstUnusedParticle();
+        if (unusedParticle >= 0)
+            this->respawnParticle(this->particles[unusedParticle]);
+        
+        this->secondCounter = .0f;
+    }
+    // update all particles
+    aliveP.clear();
+    for (unsigned int i = 0; i < this->max_particles; ++i)
+    {
+        
+        Particle& p = this->particles[i];
+        p.Life -= dt * this->anim_speed; // reduce life
+        
+        if (p.Life > 0.0f)
+        {	// particle is alive, thus update
+            
+            float t = p.Life / p.tLife;
+            p.currentColor = t * p.Color + (1 - t) * p.finColor;
+            p.currentScale = t * p.scale + (1 - t) * p.scaleFin;
+            if (fmod(rand(), 1000 / this->anim_speed) == 0) p.Direction.x += p.deviation.x;
+            if (fmod(rand() , 1000 / this->anim_speed) == 0) p.Direction.y += p.deviation.y;
+            if (fmod(rand() , 1000 / this->anim_speed) == 0) p.Direction.z += p.deviation.z;
+            p.Direction = glm::normalize(p.Direction);
+            p.currentPosition = p.Position + p.Direction * p.speed * (p.tLife - p.Life);
+            if (this->opt_mass)
+            {
+                float tempSpeed = p.speed - p.mass * 9.8f * (p.tLife - p.Life);
+                p.currentPosition.y = p.Position.y + p.Direction.y * tempSpeed * (p.tLife - p.Life);
+            }
+            aliveP.push_back(p);
+        }
+    }
+    if (opt_blending)
+    {
+        quickSort(aliveP, 0, aliveP.size() - 1);
+    }
+}
+
+// render all particles
+void ParticleGenerator::Draw( glm::mat4 view, glm::mat4 proj)
+{
+    
+    if (opt_point)
+    {
+        glUseProgram(this->point_shader);
+        viewLoc = glGetUniformLocation(this->point_shader, "view");
+        projLoc = glGetUniformLocation(this->point_shader, "projection");
+        modelLoc = glGetUniformLocation(this->point_shader, "model");
+        colorLoc = glGetUniformLocation(this->point_shader, "Color");
+    }
+    else {
+        glUseProgram(this->quad_shader);
+        viewLoc = glGetUniformLocation(this->quad_shader, "view");
+        projLoc = glGetUniformLocation(this->quad_shader, "projection");
+        modelLoc = glGetUniformLocation(this->quad_shader, "model");
+        colorLoc = glGetUniformLocation(this->quad_shader, "Color");
+        sizeLoc = glGetUniformLocation(this->quad_shader, "size");
+        texturizedLoc = glGetUniformLocation(this->quad_shader, "texturized");
+        
+    }
+    
+    // Pass the matrices to the shader
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
+
+    glm::vec3 eye =glm::vec3(glm::inverse(view)[3]);
+    
+    for (Particle particle : this->aliveP)
+    {
+        if (particle.Life > 0.0f)
+        {
+            glm::mat4 model =
+                    glm::translate(glm::mat4(1.0f), particle.currentPosition) *
+                    ident_matrix;
+            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+            glUniform4f(colorLoc, particle.currentColor.x, particle.currentColor.y, particle.currentColor.z, particle.currentColor.w);
+            float distance = (glm::distance(eye, particle.currentPosition) / 5)+0.0001f;
+            if (!opt_point)
+            {
+                glUniform1i(texturizedLoc, opt_texture);
+                glUniform1f(sizeLoc, particle.size * particle.currentScale / distance);
+                if (opt_texture)
+                    glBindTexture(GL_TEXTURE_2D, texture);
+            }
+            glBindVertexArray(this->pointVAO);
+            if (opt_point)
+            {
+                
+                glPointSize(particle.size * particle.currentScale/distance);
+                glDrawArrays(GL_POINTS, 0, this->size/ sizeof(GLfloat));
+            }
+            else
+            {
+                
+                glDrawArrays(GL_POINTS, 0, (this->size*4 ) / sizeof(GLfloat));
+            }
+        }
+    }
+}
+
 
 
 int ParticleGenerator::partition(std::vector<Particle>& arr, int start, int end)
 {
-    // assuspawn_ming last element as pivotElement
-    int index = 0, pivotIndex{};
-    Particle pivotElement = arr[end];
-    std::vector<Particle> temp(end - start + 1); // making an array whose size is equal to current partition range...
-    for (int i = start; i <= end; i++) // pushing all the elements in temp which are smaller than pivotElement
+    Particle pivot = arr[end];
+    int index = start;
+    for (int i = start; i < end; i++)
     {
-        if (arr[i].Color.w > pivotElement.Color.w)
+        if (arr[i].Life>0.0f)
         {
-            temp[index] = arr[i];
-            index++;
+            if (arr[i].currentColor.w>pivot.currentColor.w)
+            {
+                Particle temp = arr[i];
+                arr[i] = arr[index];
+                arr[index] = temp;
+                index++;
+            }
         }
     }
-
-    temp[index] = pivotElement; // pushing pivotElement in temp
-    index++;
-
-    for (int i = start; i < end; i++) // pushing all the elements in temp which are greater than pivotElement
-    {
-        if (arr[i].Color.w < pivotElement.Color.w)
-        {
-            temp[index] = arr[i];
-            index++;
-        }
-    }
-    // all the elements now in temp array are order :
-    // leftmost elements are lesser than pivotElement and rightmost elements are greater than pivotElement
-
-
-
-    index = 0;
-    for (int i = start; i <= end; i++) // copying all the elements to original array i.e arr
-    {
-        if (arr[i].id == pivotElement.id)
-        {
-            // for getting pivot index in the original array.
-            // we need the pivotIndex value in the original and not in the temp array
-            pivotIndex = i;
-        }
-        arr[i] = temp[index];
-        index++;
-    }
-    return pivotIndex; // returning pivotIndex
+    Particle temp = arr[end];
+    arr[end] = arr[index];
+    arr[index] = temp;
+    return index; // returning pivotIndex
 }
 
 void ParticleGenerator::quickSort(std::vector<Particle>& arr, int start, int end)
@@ -914,29 +948,7 @@ void ParticleGenerator::quickSort(std::vector<Particle>& arr, int start, int end
     return;
 }
 
-void ParticleGenerator::init()
-{
-    GLfloat point[] = { .0f,.0f,.0f };
-    
-    glGenVertexArrays(1, &this->pointVAO);
-    glBindVertexArray(this->pointVAO);
-    
-    glGenBuffers(1, &this->pointVBO);
-    this->size = sizeof(point);
-    // fill mesh buffer
-    glBindBuffer(GL_ARRAY_BUFFER, this->pointVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(point), point, GL_STATIC_DRAW);
-    // set mesh attributes
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
-    glEnableVertexAttribArray(0);
-    // create this->amount default particle instances
-    for (unsigned int i = 0; i < this->max_particles; ++i) {
-        Particle temp;
-        temp.id = i;
-        this->particles.push_back(temp);
-    }
-        
-}
+
 
 // stores the index of the last particle used (for quick access to next dead particle)
 unsigned int lastUsedParticle = 0;

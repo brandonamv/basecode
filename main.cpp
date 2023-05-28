@@ -149,6 +149,8 @@ int main(){
     float particles_life_variance = 1.0f;
     vec3 particles_direction(.0f,.0f,.0f);
     float particles_direction_variance[3] = { .0f,.0f, .0f };
+    float particles_desviation[3] = { .0f,.0f, .0f };
+    float particles_desviation_variance[3] = { .0f,.0f, .0f };
     float particles_speed = .01f;
     float particles_speed_variance = .01f;
     static bool particles_texture = false;
@@ -163,7 +165,46 @@ int main(){
     float particle_mass=1.0f;
     float particle_mass_variance = 1.0f;
 
+    float R_particles_size[2] = { 1.0f,5.0f };
+    float R_particles_size_variance[2] = { 1.0f,5.0f };
+    float R_particles_size_quad[2] = { .1f, 3.0f };
+    float R_particles_size_variance_quad[2] = { .1f, 3.0f };
+    int R_particles_max[2] = { 1,10000 };
+    int R_particles_generation[2] = { 1,1000 };
+    int R_particles_generation_variance[2] = { 1,100 };
+    float R_particles_life[2] = { 0.1f, 10.0f };
+    float R_particles_life_variance[2] = { 0.1f, 3.0f };
+    float R_particles_speed[2] = { 0.01f, 100.0f };
+    float R_particles_speed_variance[2] = { 0.01f, 30.0f };
+    float R_particles_scale_ini[2] = { 0.1f, 10.0f };
+    float R_particles_scale_ini_variance[2] = { .1f, 3.0f };
+    float R_particles_scale_fin[2] = { 0.1f, 10.0f };
+    float R_particles_scale_fin_variance[2] = { .1f, 3.0f };
+    float R_color_ini_variance[2] = { .0f, 1.0f };
+    float R_color_fin_variance[2] = { .0f, 1.0f };
+    float R_particles_desviation[2] = { -.1f, .1f };
+    float R_particles_desviation_variance[2] = { -.1f, .1f };
+    float R_particles_direction_variance[2] = { .0f, .5f };
+    /*ImGui::SliderFloat("Size", &particles_size, 1.0f, 3.0f);
+    ImGui::SliderFloat("Size Var", &particles_size_variance, 1.0f, 3.0f);
     
+        ImGui::InputFloat("Mass", &particle_mass, .1f, 1.0f);
+        ImGui::InputFloat("Mass Variance", &particle_mass_variance, .1f, 1.0f);
+    
+    ImGui::SliderInt("Max Particles", &particles_max, 1, 10000);
+    ImGui::SliderInt("Particles/sec", &particles_generation, 1, 1000);
+    ImGui::SliderInt("Particles/sec Var", &particles_generation_variance, 1, 100);
+    ImGui::SliderFloat("LifeTime", &particles_life, 0.1f, 10.0f, "%.2f secs");
+    ImGui::SliderFloat("LifeTime Var", &particles_life_variance, 0.1f, 3.0f, "%.2f secs");
+    ImGui::SliderFloat("Speed", &particles_speed, 0.01f, 100.0f);
+    ImGui::SliderFloat("Speed Var", &particles_speed_variance, 0.01f, 30.0f);
+    ImGui::SliderFloat("Scale Init", &particles_scale_ini, 0.1f, 10.0f);
+    ImGui::SliderFloat("Scale Init Var", &particles_scale_ini_variance, .1f, 3.0f);
+    ImGui::SliderFloat("Scale Fin", &particles_scale_fin, 0.1f, 10.0f);
+    ImGui::SliderFloat("Scale Fin Var", &particles_scale_fin_variance, .1f, 3.0f);
+    ImGui::SliderFloat4("Init Var", color_ini_variance, .0f, 1.0f);
+    ImGui::SliderFloat4("Final Var", color_fin_variance, .0f, 1.0f);
+    ImGui::SliderFloat3("Direction Var", particles_direction_variance, .0f, .5f);*/
     float sx,sy,sz;
     float* objColor = nullptr, * boundingColor;
 
@@ -333,6 +374,12 @@ int main(){
         if (!particle_system.empty())
         {
             ImGui::Separator();
+            if (ImGui::Button("Clear Particles"))
+                particle_system.clear();
+            if (particle_system.size()>1)
+            {
+
+            }
             ImGui::Text("Animation Speed");
             ImGui::SliderFloat("s_ptcle", &opc_anim_speed, 0.1f, 10.0f);
             ImGui::Checkbox("Gravity", &opc_gravity);
@@ -401,18 +448,86 @@ int main(){
             particles_direction_variance[0] = particle_actual->getDirectionVar()[0];
             particles_direction_variance[1] = particle_actual->getDirectionVar()[1];
             particles_direction_variance[2] = particle_actual->getDirectionVar()[2];
+            particles_desviation[0] = particle_actual->getDeviation()[0];
+            particles_desviation[1] = particle_actual->getDeviation()[1];
+            particles_desviation[2] = particle_actual->getDeviation()[2];
+            particles_desviation_variance[0] = particle_actual->getDeviationVar()[0];
+            particles_desviation_variance[1] = particle_actual->getDeviationVar()[1];
+            particles_desviation_variance[2] = particle_actual->getDeviationVar()[2];
             particle_mass = particle_actual->getMass();
             particle_mass_variance = particle_actual->getMassVar();
             particles_point = particle_actual->getOptPoint();
             
             ImGui::Begin("Particle Menu", &menu_particle, ImGuiWindowFlags_MenuBar);
-            ImGui::InputFloat3("Spawn Init", min_box);
-            ImGui::InputFloat3("Spawn Fin", max_box);
             ImGui::Checkbox("Point", &particles_point);
+            if (ImGui::Button("Save"))
+            {
+                string tempName;
+                size_t numero;
+
+                tempName = saveFile(particle_actual->save());
+                numero = tempName.find_last_of("\\");
+
+                if (particle_actual->getTexture())
+                {
+                    int width, height, nrChannels;
+                    stbi_set_flip_vertically_on_load(true);
+                    string imgName = particle_actual->getTextureData();
+                    unsigned char* data = stbi_load(imgName.data(), &width, &height, &nrChannels, 0);
+                    if (data)
+                    {
+                        if (imgName[imgName.find_last_of(".") + 1] == 'j')
+                        {
+                            stbi_write_jpg(string(tempName.substr(0, tempName.find_last_of(".")) + imgName.substr(imgName.find_last_of("."), imgName.size())).data(), width, height, nrChannels, data, 100);
+                        }
+                        else if (imgName[imgName.find_last_of(".") + 1] == 'p')
+                        {
+                            stbi_write_png(string(tempName.substr(0, tempName.find_last_of(".")) + imgName.substr(imgName.find_last_of("."), imgName.size())).data(), width, height, nrChannels, data, width * nrChannels);
+                        }
+                        else {
+                            stbi_write_bmp(string(tempName.substr(0, tempName.find_last_of(".")) + imgName.substr(imgName.find_last_of("."), imgName.size())).data(), width, height, nrChannels, data);
+                        }
+
+                    }
+                    else
+                    {
+                        std::cout << "Failed to load texture" << std::endl;
+                    }
+                    stbi_image_free(data);
+                }
+
+
+            }
+            if (ImGui::Button("Load"))
+            {
+                string temp = openFile();
+                if (temp != "")
+                {
+                    particle_actual->load(temp);
+                    if (particle_actual->getTexture())
+                    {
+                        int width, height, nrChannels;
+                        stbi_set_flip_vertically_on_load(true);
+                        string imgName = particle_actual->getTextureData();
+                        unsigned char* data = stbi_load(imgName.data(), &width, &height, &nrChannels, 0);
+                        if (data)
+                        {
+
+                            particle_actual->setTexture(data, width, height, true, imgName);
+                        }
+                        else
+                        {
+                            std::cout << "Failed to load texture" << std::endl;
+                        }
+                        stbi_image_free(data);
+                    }
+                }
+
+            }
             if (particles_point)
             {
-                ImGui::SliderFloat("Size", &particles_size, 1.0f, 5.0f);
-                ImGui::SliderFloat("Size Var", &particles_size_variance, 1.0f, 5.0f);
+                ImGui::SliderFloat("Size", &particles_size, R_particles_size[0], R_particles_size[1]);
+                ImGui::SliderFloat("Size Var", &particles_size_variance, R_particles_size_variance[0], R_particles_size_variance[1]);
             }
             else
             {
@@ -446,30 +561,34 @@ int main(){
                         particle_actual->setTexture(nullptr, 0, 0, false,"");
                     }
                 }
-                ImGui::SliderFloat("Size", &particles_size, 1.0f, 3.0f);
-                ImGui::SliderFloat("Size Var", &particles_size_variance, 1.0f, 3.0f);
+                ImGui::SliderFloat("Size", &particles_size, R_particles_size_quad[0], R_particles_size_quad[1]);
+                ImGui::SliderFloat("Size Var", &particles_size_variance, R_particles_size_variance_quad[0], R_particles_size_variance_quad[1]);
             }
             if (opc_gravity)
             {
                 ImGui::InputFloat("Mass", &particle_mass, .1f, 1.0f);
                 ImGui::InputFloat("Mass Variance", &particle_mass_variance, .1f, 1.0f);
             }
-            ImGui::SliderInt("Max Particles", &particles_max, 1, 10000);
-            ImGui::SliderInt("Particles/sec", &particles_generation, 1, 1000);
-            ImGui::SliderInt("Particles/sec Var", &particles_generation_variance, 1, 100);
-            ImGui::SliderFloat("LifeTime", &particles_life, 0.1f, 10.0f, "%.2f secs");
-            ImGui::SliderFloat("LifeTime Var", &particles_life_variance, 0.1f, 3.0f, "%.2f secs");
-            ImGui::SliderFloat("Speed", &particles_speed, 0.01f, 100.0f);
-            ImGui::SliderFloat("Speed Var", &particles_speed_variance, 0.01f, 30.0f);
-            ImGui::SliderFloat("Scale Init", &particles_scale_ini, 0.1f, 10.0f);
-            ImGui::SliderFloat("Scale Init Var", &particles_scale_ini_variance, .1f, 3.0f);
-            ImGui::SliderFloat("Scale Fin", &particles_scale_fin, 0.1f, 10.0f);
-            ImGui::SliderFloat("Scale Fin Var", &particles_scale_fin_variance, .1f, 3.0f);
+            ImGui::InputFloat3("Spawn Init", min_box);
+            ImGui::InputFloat3("Spawn Fin", max_box);
+            ImGui::SliderInt("Max Particles", &particles_max, R_particles_max[0], R_particles_max[1]);
+            ImGui::SliderInt("Particles/sec", &particles_generation, R_particles_generation[0], R_particles_generation[1]);
+            ImGui::SliderInt("Particles/sec Var", &particles_generation_variance, R_particles_generation_variance[0], R_particles_generation_variance[1]);
+            ImGui::SliderFloat("LifeTime", &particles_life, R_particles_life[0], R_particles_life[1], "%.2f secs");
+            ImGui::SliderFloat("LifeTime Var", &particles_life_variance, R_particles_life_variance[0], R_particles_life_variance[1], "%.2f secs");
+            ImGui::SliderFloat("Speed", &particles_speed, R_particles_speed[0], R_particles_speed[1]);
+            ImGui::SliderFloat("Speed Var", &particles_speed_variance, R_particles_speed_variance[0], R_particles_speed_variance[1]);
+            ImGui::SliderFloat("Scale Init", &particles_scale_ini, R_particles_scale_ini[0], R_particles_scale_ini[1]);
+            ImGui::SliderFloat("Scale Init Var", &particles_scale_ini_variance, R_particles_scale_ini_variance[0], R_particles_scale_ini_variance[1]);
+            ImGui::SliderFloat("Scale Fin", &particles_scale_fin, R_particles_scale_fin[0], R_particles_scale_fin[1]);
+            ImGui::SliderFloat("Scale Fin Var", &particles_scale_fin_variance, R_particles_scale_fin_variance[0], R_particles_scale_fin_variance[1]);
             ImGui::ColorEdit4("InitColor", color_ini);
             ImGui::SliderFloat4("Init Var", color_ini_variance, .0f, 1.0f);
             ImGui::ColorEdit4("FinalColor", color_fin);
             ImGui::SliderFloat4("Final Var", color_fin_variance, .0f, 1.0f);
-            ImGui::SliderFloat3("Direction Var", particles_direction_variance, .0f, .5f);
+            ImGui::SliderFloat3("Desviation", particles_desviation, R_particles_desviation[0], R_particles_desviation[1]);
+            ImGui::SliderFloat3("Desviation Var", particles_desviation_variance, R_particles_desviation_variance[0], R_particles_desviation_variance[1]);
+            ImGui::SliderFloat3("Direction Var", particles_direction_variance, R_particles_direction_variance[0], R_particles_direction_variance[1]);
             ImGui::gizmo3D("Direction", particles_direction);
             particle_actual->setMaxParticles(particles_max);
             particle_actual->setNewParticles(particles_generation);
@@ -500,73 +619,16 @@ int main(){
             particle_actual->setDirectionVar(
                 glm::vec3(particles_direction_variance[0], particles_direction_variance[1], particles_direction_variance[2])
             );
+            particle_actual->setDesviation(
+                glm::vec3(particles_desviation[0], particles_desviation[1], particles_desviation[2])
+            );
+            particle_actual->setDesviationVar(
+                glm::vec3(particles_desviation_variance[0], particles_desviation_variance[1], particles_desviation_variance[2])
+            );
             particle_actual->setMass(particle_mass);
             particle_actual->setMassVar(particle_mass_variance);
             particle_actual->setOptPoint(particles_point);
-            if (ImGui::Button("Save"))
-            {
-                string tempName;
-                size_t numero;
-                
-                tempName=saveFile(particle_actual->save());
-                numero=tempName.find_last_of("\\");
-                
-                if (particle_actual->getTexture())
-                {
-                    int width, height, nrChannels;
-                    stbi_set_flip_vertically_on_load(true);
-                    string imgName = particle_actual->getTextureData();
-                    unsigned char* data = stbi_load(imgName.data(), &width, &height, &nrChannels, 0);
-                    if (data)
-                    {
-                        if (imgName[imgName.find_last_of(".") + 1] == 'j')
-                        {
-                            stbi_write_jpg(string(tempName.substr(0, tempName.find_last_of(".")) + imgName.substr(imgName.find_last_of("."), imgName.size())).data(), width, height, nrChannels, data, 100);
-                        }
-                        else if (imgName[imgName.find_last_of(".") + 1] == 'p')
-                        {
-                            stbi_write_png(string(tempName.substr(0, tempName.find_last_of(".")) + imgName.substr(imgName.find_last_of("."), imgName.size())).data(), width, height, nrChannels, data, width* nrChannels);
-                        }
-                        else {
-                            stbi_write_bmp(string(tempName.substr(0, tempName.find_last_of(".")) + imgName.substr(imgName.find_last_of("."), imgName.size())).data(), width, height, nrChannels, data);
-                        }
-                        
-                    }
-                    else
-                    {
-                        std::cout << "Failed to load texture" << std::endl;
-                    }
-                    stbi_image_free(data);
-                }
-                
-
-            }
-            if (ImGui::Button("Load"))
-            {
-                string temp = openFile();
-                if (temp!="")
-                {
-                    particle_actual->load(temp);
-                    if (particle_actual->getTexture())
-                    {
-                        int width, height, nrChannels;
-                        stbi_set_flip_vertically_on_load(true);
-                        string imgName = particle_actual->getTextureData();
-                        unsigned char* data = stbi_load(imgName.data(), &width, &height, &nrChannels, 0);
-                        if (data)
-                        {
-                            
-                            particle_actual->setTexture(data, width, height, true, imgName);
-                        }
-                        else
-                        {
-                            std::cout << "Failed to load texture" << std::endl;
-                        }
-                        stbi_image_free(data);
-                    }
-                }
-                
-            }
+            
             ImGui::End();
             
         }
