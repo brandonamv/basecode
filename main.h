@@ -39,7 +39,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void mouseClick(GLFWwindow* window, int button, int action, int mods);
 void do_movement(GLfloat delta);
 std::string openFile();
-void saveFile(std::string fileText);
+std::string saveFile(std::string fileText);
 
 // Window dimensions
 const GLuint WIDTH = 1400, HEIGHT = 1000;

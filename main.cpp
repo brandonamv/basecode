@@ -1,6 +1,9 @@
 
 #include <main.h>
 #include <stb_image.h>
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
+
 // GLEW
 // #ifdef GLEW_STATIC
 // #  define GLEWAPI extern
@@ -39,7 +42,7 @@ string openFile() {
     return lTheOpenFileName;
 }
 
-void saveFile(string fileText)
+string saveFile(string fileText)
 {
     char const* lTheSaveFileName;
     char const* lFilterPatterns[2] = { "*.txt", "*.text" };
@@ -59,7 +62,7 @@ void saveFile(string fileText)
             "ok",
             "error",
             1);
-        return;
+        return "";
     }
     lIn = fopen(lTheSaveFileName, "w");
     if (!lIn)
@@ -70,11 +73,11 @@ void saveFile(string fileText)
             "ok",
             "error",
             1);
-        return;
+        return "";
     }
     fputs(fileText.data(), lIn);
     fclose(lIn);
-
+    return lTheSaveFileName;
 }
 
 // The MAIN function, from here we start the application and run the game loop
@@ -417,7 +420,7 @@ int main(){
                 {
                     if (ImGui::Button("Add Texture"))
                     {
-
+                        
                         string img = openFile();
                         if (img != "")
                         {
@@ -426,21 +429,21 @@ int main(){
                             unsigned char* data = stbi_load(img.data(), &width, &height, &nrChannels, 0);
                             if (data)
                             {
-                                particle_actual->setTexture(data, width, height, true);
-                                stbi_image_free(data);
+                                particle_actual->setTexture(data, width, height, true, img);
                             }
                             else
                             {
                                 std::cout << "Failed to load texture" << std::endl;
                             }
-
+                            stbi_image_free(data);
                         }
                     }
                 }
                 else {
                     if (ImGui::Button("Delete Texture"))
                     {
-                        particle_actual->setTexture(nullptr, 0, 0, false);
+                        
+                        particle_actual->setTexture(nullptr, 0, 0, false,"");
                     }
                 }
                 ImGui::SliderFloat("Size", &particles_size, 1.0f, 3.0f);
@@ -468,7 +471,6 @@ int main(){
             ImGui::SliderFloat4("Final Var", color_fin_variance, .0f, 1.0f);
             ImGui::SliderFloat3("Direction Var", particles_direction_variance, .0f, .5f);
             ImGui::gizmo3D("Direction", particles_direction);
-            ImGui::End();
             particle_actual->setMaxParticles(particles_max);
             particle_actual->setNewParticles(particles_generation);
             particle_actual->setNewParticlesVariance(particles_generation_variance);
@@ -501,6 +503,72 @@ int main(){
             particle_actual->setMass(particle_mass);
             particle_actual->setMassVar(particle_mass_variance);
             particle_actual->setOptPoint(particles_point);
+            if (ImGui::Button("Save"))
+            {
+                string tempName;
+                size_t numero;
+                
+                tempName=saveFile(particle_actual->save());
+                numero=tempName.find_last_of("\\");
+                
+                if (particle_actual->getTexture())
+                {
+                    int width, height, nrChannels;
+                    stbi_set_flip_vertically_on_load(true);
+                    string imgName = particle_actual->getTextureData();
+                    unsigned char* data = stbi_load(imgName.data(), &width, &height, &nrChannels, 0);
+                    if (data)
+                    {
+                        if (imgName[imgName.find_last_of(".") + 1] == 'j')
+                        {
+                            stbi_write_jpg(string(tempName.substr(0, tempName.find_last_of(".")) + imgName.substr(imgName.find_last_of("."), imgName.size())).data(), width, height, nrChannels, data, 100);
+                        }
+                        else if (imgName[imgName.find_last_of(".") + 1] == 'p')
+                        {
+                            stbi_write_png(string(tempName.substr(0, tempName.find_last_of(".")) + imgName.substr(imgName.find_last_of("."), imgName.size())).data(), width, height, nrChannels, data, width* nrChannels);
+                        }
+                        else {
+                            stbi_write_bmp(string(tempName.substr(0, tempName.find_last_of(".")) + imgName.substr(imgName.find_last_of("."), imgName.size())).data(), width, height, nrChannels, data);
+                        }
+                        
+                    }
+                    else
+                    {
+                        std::cout << "Failed to load texture" << std::endl;
+                    }
+                    stbi_image_free(data);
+                }
+                
+
+            }
+            if (ImGui::Button("Load"))
+            {
+                string temp = openFile();
+                if (temp!="")
+                {
+                    particle_actual->load(temp);
+                    if (particle_actual->getTexture())
+                    {
+                        int width, height, nrChannels;
+                        stbi_set_flip_vertically_on_load(true);
+                        string imgName = particle_actual->getTextureData();
+                        unsigned char* data = stbi_load(imgName.data(), &width, &height, &nrChannels, 0);
+                        if (data)
+                        {
+                            
+                            particle_actual->setTexture(data, width, height, true, imgName);
+                        }
+                        else
+                        {
+                            std::cout << "Failed to load texture" << std::endl;
+                        }
+                        stbi_image_free(data);
+                    }
+                }
+                
+            }
+            ImGui::End();
+            
         }
 
         glm::mat4 view = cam->getView();
