@@ -1,4 +1,5 @@
-#pragma once
+#ifndef OBJ_H
+#define OBJ_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,8 +10,8 @@
 
 struct material
 {
-    std::string name;
-    std::string map_ka;
+    std::string name="";
+    std::string map_ka="";
     float kd[3] = {.7f,.7f,.7f}, ka[3] = {.0f,.0f,.0f}, ks[3] = {.7f,.7f,.7f};
     float ns=20.0, d=1.0;
 };
@@ -18,7 +19,7 @@ struct face
 {
     int vertex[4]{ -1,-1,-1,-1 };
     int texture[4]{ -1,-1,-1,-1 };
-    glm::vec3 normal;
+    glm::vec3 normal=glm::vec3(.0f);
 };
 
 struct baseNormal {
@@ -26,14 +27,14 @@ struct baseNormal {
     float adjacents = 0.0f;
 };
 
+//struct para el subMesh
 struct mesh {
-    std::string nombre;
-    subObj* meshs;
-
-    //variables para dibujar objetos
-    std::vector <GLfloat> obj_data;
-    material mat;
-    std::vector <face> vector_faces;
+    std::string nombre="";//nombre del mesh
+    subObj* meshs=nullptr;//data para el draw
+    int s = 0;//sombras
+    std::vector <GLfloat> obj_data;//data de los triangulos
+    material mat;//data del material
+    std::vector <face> vector_faces;//data de las caras (calculo de normales)
 };
 
 class obj
@@ -110,6 +111,8 @@ class obj
         GLuint boundingVBO, boundingVAO;
 
         void loadObj(std::string filename);
-
+        void loadVertex(int vi, int ni, int ti, std::vector<glm::vec3> auxVertices, std::vector<glm::vec2> auxTextures, std::vector<glm::vec3> auxNormals);
+        void loadVertexNormal(int vi, int ti, std::vector<glm::vec3> auxVertices, std::vector<glm::vec2> auxTextures, std::vector<baseNormal> normal_vertex);
         std::vector<std::string> split(std::string const& original, char separator);
 };
+#endif

@@ -2,7 +2,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 using namespace std;
-subObj::subObj(GLfloat* data, int size, string image) {
+subObj::subObj(GLfloat* data, int size) {
     this->size = size / sizeof(data);
     // First, set the container's VAO (and VBO)
     glGenVertexArrays(1, &containerVAO);
@@ -22,6 +22,17 @@ subObj::subObj(GLfloat* data, int size, string image) {
     // texture attribute
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
     glEnableVertexAttribArray(2);
+    
+}
+
+subObj::~subObj() {
+    // Delete all the objects we've created
+    glDeleteVertexArrays(1, &containerVAO);
+    glDeleteBuffers(1, &VBO);
+    glDeleteTextures(1, &texture);
+}
+void subObj::setTexture(std::string image)
+{
     if (image.compare(""))
     {
         stbi_set_flip_vertically_on_load(true);
@@ -48,24 +59,13 @@ subObj::subObj(GLfloat* data, int size, string image) {
         }
         stbi_image_free(datas);
     }
-    else
-    {
-        texturized = false;
-    }
-}
-
-subObj::~subObj() {
-    // Delete all the objects we've created
-    glDeleteVertexArrays(1, &containerVAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteTextures(1, &texture);
 }
 bool subObj::getTexture() {
     return texturized;
 }
 void subObj::draw() {
-
-    glBindTexture(GL_TEXTURE_2D, texture);
+    if (texturized)
+        glBindTexture(GL_TEXTURE_2D, texture);
     bind();
     glDrawArrays(GL_TRIANGLES, 0, size / sizeof(GLfloat*));
 }

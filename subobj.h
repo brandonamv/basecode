@@ -30,16 +30,17 @@ public:
     int size;
 
     // data =  x,y,z,nx,ny,nz,x,y,z,nx,ny,nz, .... 
-    subObj(GLfloat* data, int size, std::string image);
+    subObj(GLfloat* data, int size);
 
     ~subObj();
+    void setTexture(std::string image);
     bool getTexture();
     void draw();
     
 private:
-    GLuint VBO, containerVAO;
-    GLuint texture;
-    bool texturized;
+    GLuint VBO=0, containerVAO=0;
+    GLuint texture=0;
+    bool texturized=false;
 
     void bind() {
         glBindVertexArray(containerVAO);

@@ -185,26 +185,6 @@ int main(){
     float R_particles_desviation[2] = { -.1f, .1f };
     float R_particles_desviation_variance[2] = { -.1f, .1f };
     float R_particles_direction_variance[2] = { .0f, .5f };
-    /*ImGui::SliderFloat("Size", &particles_size, 1.0f, 3.0f);
-    ImGui::SliderFloat("Size Var", &particles_size_variance, 1.0f, 3.0f);
-    
-        ImGui::InputFloat("Mass", &particle_mass, .1f, 1.0f);
-        ImGui::InputFloat("Mass Variance", &particle_mass_variance, .1f, 1.0f);
-    
-    ImGui::SliderInt("Max Particles", &particles_max, 1, 10000);
-    ImGui::SliderInt("Particles/sec", &particles_generation, 1, 1000);
-    ImGui::SliderInt("Particles/sec Var", &particles_generation_variance, 1, 100);
-    ImGui::SliderFloat("LifeTime", &particles_life, 0.1f, 10.0f, "%.2f secs");
-    ImGui::SliderFloat("LifeTime Var", &particles_life_variance, 0.1f, 3.0f, "%.2f secs");
-    ImGui::SliderFloat("Speed", &particles_speed, 0.01f, 100.0f);
-    ImGui::SliderFloat("Speed Var", &particles_speed_variance, 0.01f, 30.0f);
-    ImGui::SliderFloat("Scale Init", &particles_scale_ini, 0.1f, 10.0f);
-    ImGui::SliderFloat("Scale Init Var", &particles_scale_ini_variance, .1f, 3.0f);
-    ImGui::SliderFloat("Scale Fin", &particles_scale_fin, 0.1f, 10.0f);
-    ImGui::SliderFloat("Scale Fin Var", &particles_scale_fin_variance, .1f, 3.0f);
-    ImGui::SliderFloat4("Init Var", color_ini_variance, .0f, 1.0f);
-    ImGui::SliderFloat4("Final Var", color_fin_variance, .0f, 1.0f);
-    ImGui::SliderFloat3("Direction Var", particles_direction_variance, .0f, .5f);*/
     float sx,sy,sz;
     float* objColor = nullptr, * boundingColor;
 
@@ -818,9 +798,16 @@ int main(){
         
         basic_shader.Use();
         // Pass the matrices to the shader
+        GLint viewLoc = glGetUniformLocation(basic_shader.Program, "view");
+        GLint projLoc = glGetUniformLocation(basic_shader.Program, "projection");
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
-                
+        glUniform3f(glGetUniformLocation(basic_shader.Program, "ambient_color"), 1.0f,1.0f,1.0f);
+        glUniform3f(glGetUniformLocation(basic_shader.Program, "difuse_color"), 1.0f,1.0f,1.0f);
+        glUniform3f(glGetUniformLocation(basic_shader.Program, "specular_color"), 1.0f,1.0f,1.0f);
+        glUniform3f(glGetUniformLocation(basic_shader.Program, "viewPos"), 1.0f,1.0f,1.0f);
+        glUniform3f(glGetUniformLocation(basic_shader.Program, "ligth_position"), 1.0f,1.0f,1.0f);
+
         if (!objects.empty())
         {
             for (const auto &x:objects)
