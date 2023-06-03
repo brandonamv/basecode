@@ -17,11 +17,11 @@ struct Particle {
     int id;
     glm::vec3 Position, Direction, currentPosition;
     glm::vec3 deviation;
-    glm::vec4 Color,midColor,finColor,currentColor;
+    glm::vec4 Color,finColor,currentColor;
     float speed;
     float currentScale, scale, scaleFin;
     float size;
-    float Life,mLife,tLife;
+    float Life,tLife;
     float mass;
 };
 
@@ -39,8 +39,9 @@ public:
     // render all particles
     void Draw( glm::mat4 view, glm::mat4 proj);
 
-    void setTexture(unsigned char* data, int width, int height, bool active);
+    void setTexture(unsigned char* data, int width, int height, bool active, std::string img);
     bool getTexture();
+    std::string getTextureData();
     void setColor(glm::vec4 ini, glm::vec4 fin);
     float* getInitColor();
     float* getFinColor();
@@ -55,6 +56,10 @@ public:
     float* getDirection();
     void setDirectionVar(glm::vec3 dir);
     float* getDirectionVar();
+    void setDesviation(glm::vec3 dir);
+    float* getDeviation();
+    void setDesviationVar(glm::vec3 dir);
+    float* getDeviationVar();
     void setMaxParticles(int n);
     int getMaxParticles();
     void setNewParticles(int n);
@@ -92,13 +97,15 @@ public:
     void setOptBlending(bool o);
 
     std::string save();
+    void load(std::string t);
     
 private:
     int iterator[2]{ -1, 1 };
     int partition(std::vector<Particle>& arr, int start, int end);
     void quickSort(std::vector<Particle>& arr, int start, int end);
     // state
-    std::vector<Particle> particles,aliveParticles;
+    std::vector<Particle> particles;
+    std::vector <Particle> aliveP;
     //particles options
     glm::vec3 spawn_min=glm::vec3(-1.0f), spawn_max = glm::vec3(1.0f); //area de spawn
     glm::vec4 color_ini = glm::vec4(1.0f), color_fin = glm::vec4(.1f); //colores
@@ -135,6 +142,8 @@ private:
     GLuint texture;
     GLint viewLoc, projLoc, modelLoc;
     GLint colorLoc, sizeLoc, texturizedLoc;
+    std::string textureData;
+    int width, height, nrChannels;
     int size;
     GLuint pointVAO,pointVBO, quadVAO, quadVBO, boundingVAO, boundingVBO;
     glm::mat4 ident_matrix= glm::rotate(glm::mat4(1.0f), .0f, glm::vec3(0.0f, 1.0f, 0.0f)) *
@@ -150,7 +159,7 @@ private:
 
     glm::vec4 colorVariance(glm::vec4 color, glm::vec4 variance);
 
-    float modNumber(int n, float div);
+    float modNumber(float div);
     
 };
 

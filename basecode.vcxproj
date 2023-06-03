@@ -162,6 +162,7 @@
     <ClInclude Include="imgui\imstb_textedit.h" />
     <ClInclude Include="imgui\imstb_truetype.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="stb_image_write.h" />
     <ClInclude Include="subObj.h" />
     <ClInclude Include="obj.h" />
     <ClInclude Include="main.h" />

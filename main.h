@@ -38,8 +38,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void mouseClick(GLFWwindow* window, int button, int action, int mods);
 void do_movement(GLfloat delta);
+bool verify(int min, FILE* f,int &a,int&b,char* s);
+bool verify(float min, float max, FILE* f,float &a,float&b, char* s);
+bool verify(float min, FILE* f,float &a,float&b, char* s);
 std::string openFile();
-void saveFile(std::string fileText);
+std::string saveFile(std::string fileText);
 
 // Window dimensions
 const GLuint WIDTH = 1400, HEIGHT = 1000;
