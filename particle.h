@@ -98,7 +98,7 @@ private:
     int partition(std::vector<Particle>& arr, int start, int end);
     void quickSort(std::vector<Particle>& arr, int start, int end);
     // state
-    std::vector<Particle> particles;
+    std::vector<Particle> particles,aliveParticles;
     //particles options
     glm::vec3 spawn_min=glm::vec3(-1.0f), spawn_max = glm::vec3(1.0f); //area de spawn
     glm::vec4 color_ini = glm::vec4(1.0f), color_fin = glm::vec4(.1f); //colores
