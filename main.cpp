@@ -229,7 +229,7 @@ int main(){
         {
             if (ImGui::BeginMenu("File"))
             {
-                if (ImGui::MenuItem("Open..", "Ctrl+O")) {
+                if (ImGui::MenuItem("Open file", "Ctrl+O")) {
                     string objeto = openFile();
                     if (!objeto.empty())
                     {
